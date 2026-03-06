@@ -1,10 +1,10 @@
 # NeoGeneralista — Project Overview
 
 ## What this is
-A Next.js 14 website for **NeoGeneralista**, a creative content studio by Rafaela Mota Lemos.
+A Next.js 14 website for **NeoGeneralista**, a creative content studio by Ana Azevedo.
 The site also hosts **AlgoritmoHumano**, a monthly event series about humans and AI.
 
-The teacher/owner (Rafaela) manages all content through **Sanity CMS** — no code editing required.
+The teacher/owner (Ana Azevedo) manages all content through **Sanity CMS** — no code editing required.
 Newsletter subscriptions are handled via **Sender** (sender.net).
 
 ## Stack
@@ -92,7 +92,7 @@ npm start
    ```
 5. **Open a Pull Request** on GitHub to merge into `main`. Review before merging.
 
-## Content management (for Rafaela)
+## Content management (for Ana Azevedo)
 All content is managed at: https://sanity.io/manage
 - Log in with the project account
 - Edit Conversas, Evento, Equipa, Patrocinadores, etc.

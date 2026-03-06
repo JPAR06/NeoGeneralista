@@ -111,7 +111,7 @@ export default function NeoGeneralista() {
         <div className="ycs-container ycs-about-grid">
           <div>
             <h2>
-              Ola, sou a <em>Rafaela</em>
+              Ola, sou a <em>Ana Azevedo</em>
             </h2>
             <p>
               Sou os olhos, maos e cabeca a frente do NeoGeneralista. Ajudo marcas a
@@ -131,7 +131,7 @@ export default function NeoGeneralista() {
           </div>
           <img
             src="https://yellowcreativestudio.net/wp-content/uploads/2025/09/RitaSantanaPhotography-Branding-RafaMotaLemos-0097-scaled.jpg"
-            alt="Rafaela"
+            alt="Ana Azevedo"
           />
         </div>
       </section>
@@ -181,7 +181,7 @@ export default function NeoGeneralista() {
           <div>
             <h2>Clientes Felizes</h2>
             <blockquote>
-              A Rafaela traz sentido de humor, empatia e uma sensibilidade cultural rara a tudo o
+              A Ana Azevedo traz sentido de humor, empatia e uma sensibilidade cultural rara a tudo o
               que faz. Garante que a mensagem passa e que quem le se sente visto.
             </blockquote>
             <p>Antonio Gaspar, Head of Brand Operations, Visit Portugal</p>
