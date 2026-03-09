@@ -73,24 +73,36 @@ npm start
 
 ## Git workflow — ALWAYS follow this
 
+### CRITICAL RULE FOR CLAUDE
+Before making any change that could affect code behaviour, Claude MUST:
+1. Check the current branch with `git branch --show-current`
+2. If on `main`, immediately create a new feature branch before doing anything else
+3. Each distinct task or feature gets its own branch — never mix unrelated changes in one branch
+4. This applies at the START of every conversation and any time a new task begins mid-conversation
+
+Minor changes (typos, comments, docs) can go directly on the current branch. Any change that touches logic, UI behaviour, APIs, or config requires a branch.
+
+---
+
 1. **Never commit directly to `main`**. Main is the stable, deployed branch.
-2. **Create a branch** for every change:
+2. **Create a branch** for every meaningful change:
    ```bash
    git checkout main
    git pull origin main
    git checkout -b feature/your-feature-name
    ```
-3. **Commit often** — after each meaningful step, not just at the end:
+3. **One branch per task** — if tackling two different problems, create two separate branches.
+4. **Commit often** — after each meaningful step, not just at the end:
    ```bash
    git add <specific-files>
    git commit -m "type: short description"
    ```
    Commit message types: `feat` (new feature), `fix` (bug fix), `docs` (documentation), `style` (CSS/visual), `refactor`, `chore` (setup/config)
-4. **Push your branch** when ready:
+5. **Push your branch** when ready:
    ```bash
    git push -u origin feature/your-feature-name
    ```
-5. **Open a Pull Request** on GitHub to merge into `main`. Review before merging.
+6. **Open a Pull Request** on GitHub to merge into `main`. Review before merging.
 
 ## Content management (for Ana Azevedo)
 All content is managed at: https://sanity.io/manage
