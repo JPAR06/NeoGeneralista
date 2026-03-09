@@ -172,23 +172,6 @@ export default function NeoGeneralista() {
         </div>
       </section>
 
-      <section className="ycs-testimonial">
-        <div className="ycs-container ycs-testimonial-grid">
-          <img
-            src="https://yellowcreativestudio.net/wp-content/uploads/2025/05/Antonio_Gaspar_URBAN_SKETCHERS_VISIT_PORTUGAL.jpeg"
-            alt="Antonio Gaspar"
-          />
-          <div>
-            <h2>Clientes Felizes</h2>
-            <blockquote>
-              A Ana Azevedo traz sentido de humor, empatia e uma sensibilidade cultural rara a tudo o
-              que faz. Garante que a mensagem passa e que quem le se sente visto.
-            </blockquote>
-            <p>Antonio Gaspar, Head of Brand Operations, Visit Portugal</p>
-            <a href="#contact">Tambem queres ser um cliente feliz?</a>
-          </div>
-        </div>
-      </section>
 
       <footer className="ycs-footer" id="contact">
         <div className="ycs-container ycs-footer-grid">
