@@ -158,7 +158,7 @@ export default function AlgoritmoHumano() {
             <div className="ah-host-info">
               <span className="ah-host-label">Porto host</span>
               <a href="#sobre" className="ah-host-name" onClick={(e) => { e.preventDefault(); scrollTo("sobre"); }}>
-                Rafaela Mota Lemos
+                Ana Azevedo
               </a>
             </div>
           </div>
@@ -316,7 +316,7 @@ export default function AlgoritmoHumano() {
             </p>
             <p>
               Inspirado no formato CreativeMornings, o AlgoritmoHumano e organizado por{" "}
-              <strong>Rafaela Mota Lemos</strong>, fundadora do NeoGeneralista, e acontece
+              <strong>Ana Azevedo</strong>, fundadora do NeoGeneralista, e acontece
               sempre na segunda semana do mes.
             </p>
             <div className="ah-sobre-stats">
@@ -350,7 +350,7 @@ export default function AlgoritmoHumano() {
             <div className="ah-membro">
               <div className="ah-membro-avatar" style={{ background: "#fcc225" }}>RM</div>
               <div className="ah-membro-info">
-                <p className="ah-membro-nome">Rafaela Mota Lemos</p>
+                <p className="ah-membro-nome">Ana Azevedo</p>
                 <p className="ah-membro-papel">Fundadora & Anfitria</p>
               </div>
             </div>

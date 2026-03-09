@@ -376,7 +376,7 @@ export default function AlgoritmoHumanoV2() {
             <div className="ahv2-team-card">
               <div className="ahv2-team-avatar" style={{ background: "#fcc225", color: "#111" }}>RM</div>
               <div className="ahv2-team-info">
-                <p className="ahv2-team-name">Rafaela Mota Lemos</p>
+                <p className="ahv2-team-name">Ana Azevedo</p>
                 <p className="ahv2-team-role">Fundadora & Anfitriã</p>
                 <p className="ahv2-team-bio">
                   Criativa, estratega de conteúdos e fundadora do NeoGeneralista.

@@ -6,7 +6,7 @@ const translations = {
     nav: { home: "Home", about: "Sobre", services: "Serviços", projects: "Projetos", blog: "Blog", contact: "Contacto" },
     hero: { line1: "Conteúdo criativo", line2a: "com toque", words: ["humano", "vibrante", "autêntico", "ousado"], cta: "Vamos Colaborar?" },
     intro: {
-      title: "Olá, sou a Rafaela",
+      title: "Olá, sou a Ana Azevedo",
       text: "Sou os olhos, mãos e cabeça à frente do NeoGeneralista. Ajudo marcas a comunicarem com estilo e clareza através de storytelling, estratégia de conteúdos e workshops de criatividade.",
       years: "anos de experiência", coffees: "cafés por dia", more: "Conhece-me melhor"
     },
@@ -21,7 +21,7 @@ const translations = {
     },
     clients: { title: "Marcas que já se renderam ao amarelo" },
     testimonial: {
-      quote: "A Rafaela traz sentido de humor, empatia e uma sensibilidade cultural rara a tudo o que faz. Garante que a mensagem passa — e que quem lê se sente visto.",
+      quote: "A Ana Azevedo traz sentido de humor, empatia e uma sensibilidade cultural rara a tudo o que faz. Garante que a mensagem passa — e que quem lê se sente visto.",
       author: "António Gaspar", role: "Head of Brand Operations, Visit Portugal"
     },
     projects: { title: "Projetos em Destaque", viewAll: "Ver todos" },
@@ -35,7 +35,7 @@ const translations = {
     nav: { home: "Home", about: "About", services: "Services", projects: "Projects", blog: "Blog", contact: "Contact" },
     hero: { line1: "Creative content", line2a: "with a", words: ["human", "vibrant", "authentic", "bold"], cta: "Let's Collaborate?" },
     intro: {
-      title: "Hi, I'm Rafaela",
+      title: "Hi, I'm Ana Azevedo",
       text: "I'm the eyes, hands and mind behind NeoGeneralista. I help brands communicate with style and clarity through storytelling, content strategy and creativity workshops.",
       years: "years of experience", coffees: "coffees per day", more: "Get to know me"
     },
@@ -50,7 +50,7 @@ const translations = {
     },
     clients: { title: "Brands that embraced the yellow" },
     testimonial: {
-      quote: "Rafaela brings humor, empathy and a rare cultural sensitivity to everything she does. She ensures the message lands — and that readers feel seen.",
+      quote: "Ana Azevedo brings humor, empathy and a rare cultural sensitivity to everything she does. She ensures the message lands — and that readers feel seen.",
       author: "António Gaspar", role: "Head of Brand Operations, Visit Portugal"
     },
     projects: { title: "Featured Projects", viewAll: "View all" },
@@ -82,7 +82,7 @@ const defaultCMSData = {
     { id: 3, titlePt: "Criatividade é um músculo", titleEn: "Creativity is a muscle", excerptPt: "Como manter a criatividade em forma, mesmo nos dias mais cinzentos.", excerptEn: "How to keep creativity fit, even on the greyest days.", date: "2025-04-10", published: true },
   ],
   testimonials: [
-    { id: 1, quotePt: "A Rafaela traz sentido de humor, empatia e uma sensibilidade cultural rara a tudo o que faz.", quoteEn: "Rafaela brings humor, empathy and a rare cultural sensitivity to everything she does.", author: "António Gaspar", role: "Head of Brand Operations, Visit Portugal", active: true },
+    { id: 1, quotePt: "A Ana Azevedo traz sentido de humor, empatia e uma sensibilidade cultural rara a tudo o que faz.", quoteEn: "Ana Azevedo brings humor, empathy and a rare cultural sensitivity to everything she does.", author: "António Gaspar", role: "Head of Brand Operations, Visit Portugal", active: true },
   ],
   subscribers: [],
   messages: [],

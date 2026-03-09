@@ -1,5 +1,5 @@
-import NeoGeneralista from '../components/NeoGeneralista';
+import Brevemente from '../components/Brevemente';
 
 export default function Home() {
-  return <NeoGeneralista />;
+  return <Brevemente />;
 }
