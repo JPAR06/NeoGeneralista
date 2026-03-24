@@ -403,7 +403,7 @@ export default function AlgoritmoHumanoV2() {
               <p className="ahv2-join-p">
                 Gostas de organizar eventos e queres ajudar a construir esta comunidade?
               </p>
-              <a href="mailto:hello@yellowcreativestudio.net" className="ahv2-btn-outline">
+              <a href="mailto:ana@neogeneralista.pt" className="ahv2-btn-outline">
                 Fala connosco
               </a>
             </div>
@@ -451,7 +451,7 @@ export default function AlgoritmoHumanoV2() {
               <div key={n} className="ahv2-pat-slot">Parceiro {n}</div>
             ))}
           </div>
-          <a href="mailto:hello@yellowcreativestudio.net" className="ahv2-btn-outline">
+          <a href="mailto:ana@neogeneralista.pt" className="ahv2-btn-outline">
             Torna-te Patrocinador
           </a>
         </div>
@@ -494,16 +494,15 @@ export default function AlgoritmoHumanoV2() {
             </div>
             <div className="ahv2-footer-col">
               <p className="ahv2-footer-col-title">Contacto</p>
-              <a href="mailto:hello@yellowcreativestudio.net" className="ahv2-footer-email">
-                hello@yellowcreativestudio.net
+              <a href="mailto:ana@neogeneralista.pt" className="ahv2-footer-email">
+                ana@neogeneralista.pt
               </a>
             </div>
           </div>
           <div className="ahv2-footer-bottom">
             <p>&copy; {new Date().getFullYear()} NeoGeneralista. Todos os direitos reservados.</p>
             <div className="ahv2-footer-bottom-links">
-              <a href="https://yellowcreativestudio.net/politica-de-privacidade/" target="_blank" rel="noreferrer">Privacidade</a>
-              <a href="https://yellowcreativestudio.net/termos-de-servico/" target="_blank" rel="noreferrer">Termos</a>
+              <a href="/politica-de-privacidade">Privacidade</a>
             </div>
           </div>
         </div>
