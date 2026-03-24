@@ -3,7 +3,9 @@ export default function PoliticaDePrivacidade() {
     <div className="ycs-page">
       <header className="ycs-header">
         <div className="ycs-container ycs-header-row">
-          <a className="ycs-logo" href="/">NeoGeneralista</a>
+          <a className="ycs-logo" href="/">
+            <img className="ycs-logo-lockup" src="/neogeneralista-logo-header.png" alt="NeoGeneralista" />
+          </a>
           <nav className="ycs-nav" aria-label="Main navigation">
             <a href="/#about">Sobre</a>
             <a href="/algoritmo-humano">AlgoritmoHumano</a>

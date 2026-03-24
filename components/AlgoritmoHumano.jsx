@@ -177,7 +177,7 @@ export default function AlgoritmoHumano() {
                 <circle cx="4" cy="4" r="2"/>
               </svg>
             </a>
-            <a href="mailto:hello@yellowcreativestudio.net" className="ah-social-icon" aria-label="Email">
+            <a href="mailto:ana@neogeneralista.pt" className="ah-social-icon" aria-label="Email">
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" viewBox="0 0 24 24">
                 <rect x="2" y="4" width="20" height="16" rx="2"/>
                 <polyline points="2,4 12,13 22,4"/>
@@ -408,7 +408,7 @@ export default function AlgoritmoHumano() {
               <div key={n} className="ah-patrocinador-slot">Parceiro {n}</div>
             ))}
           </div>
-          <a href="mailto:hello@yellowcreativestudio.net" className="ah-outline-btn">
+          <a href="mailto:ana@neogeneralista.pt" className="ah-outline-btn">
             Torna-te Patrocinador
           </a>
         </div>
@@ -421,7 +421,7 @@ export default function AlgoritmoHumano() {
           <p className="ah-section-sub">
             Tens uma ideia, queres ser orador, ou so queres saber mais?
           </p>
-          <a href="mailto:hello@yellowcreativestudio.net" className="ah-yellow-btn">
+          <a href="mailto:ana@neogeneralista.pt" className="ah-yellow-btn">
             Envia-nos um email
           </a>
         </div>
@@ -443,14 +443,13 @@ export default function AlgoritmoHumano() {
               <a href="#conversas" onClick={(e) => { e.preventDefault(); scrollTo("conversas"); }}>Conversas</a>
               <a href="#comunidade" onClick={(e) => { e.preventDefault(); scrollTo("comunidade"); }}>Comunidade</a>
               <a href="#patrocinadores" onClick={(e) => { e.preventDefault(); scrollTo("patrocinadores"); }}>Patrocinadores</a>
-              <a href="mailto:hello@yellowcreativestudio.net">Contacto</a>
+              <a href="mailto:ana@neogeneralista.pt">Contacto</a>
             </div>
           </div>
           <div className="ah-footer-bottom">
             <p>&copy; {new Date().getFullYear()} NeoGeneralista. Todos os direitos reservados.</p>
             <div className="ah-footer-bottom-links">
-              <a href="https://yellowcreativestudio.net/politica-de-privacidade/" target="_blank" rel="noreferrer">Privacidade</a>
-              <a href="https://yellowcreativestudio.net/termos-de-servico/" target="_blank" rel="noreferrer">Termos</a>
+              <a href="/politica-de-privacidade">Privacidade</a>
             </div>
           </div>
         </div>
