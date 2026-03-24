@@ -175,7 +175,7 @@ export default function NeoGeneralista() {
 
           {/* ── Logo option B: composed logo (mark + text, designer file) ── */}
           {LOGO_STYLE === "b" && (
-            <a className="ycs-logo ycs-logo--b" href="mailto:ana@neogeneralista.pt" aria-label="Enviar e-mail para Ana Azevedo">
+            <a className="ycs-logo ycs-logo--b" href="/" aria-label="NeoGeneralista">
               <img className="ycs-logo--b-img" src="/neogeneralista-logo-header.png" alt="NeoGeneralista" />
             </a>
           )}
