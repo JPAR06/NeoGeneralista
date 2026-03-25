@@ -211,7 +211,7 @@ export default function NeoGeneralista() {
       <section className="ycs-intro">
         <div className="ycs-container ycs-intro-inner" data-reveal>
           <h2>
-            O NeoGeneralista nasce no cruzamento entre <em>inovação, tecnologia e pessoas.</em>
+            O NeoGeneralista nasce do cruzamento entre <em>inovação, tecnologia e pessoas.</em>
           </h2>
           <p>
             Nem todos os problemas precisam de respostas rápidas. Alguns precisam de melhores perguntas.
@@ -220,7 +220,9 @@ export default function NeoGeneralista() {
             E algumas perguntas merecem ser pensadas devagar.
           </p>
           <p>O NeoGeneralista existe para isso.</p>
-          <a href="#contact">Vamos Conversar?</a>
+          <div className="ycs-hero-ctas">
+            <a href="#about" className="ycs-btn-secondary">Saber mais</a>
+          </div>
         </div>
       </section>
 
@@ -236,13 +238,18 @@ export default function NeoGeneralista() {
               E desconfio de tudo o que promete explicar organizações como se fossem simples.
             </p>
             <p>
-              Oficialmente, sou professora universitária, consultora, formadora e perita europeia.
-              Mas desde quando os rótulos contam a história toda?
+              Sou daquelas pessoas que têm sempre demasiadas ideias em vários campos ao mesmo tempo.
+              Sou professora universitária, consultora, formadora e perita europeia. E, quando não
+              estou a pensar sobre trabalho e organizações, provavelmente estou a dançar.
             </p>
             <p>
               Aquilo que faço, na prática, é ajudar pessoas e organizações a pensar melhor sobre
               aquilo que já não cabe em silos ou em formatos pré-definidos. A ligar ideias que
               parecem não ter relação. A dar linguagem a desafios que ainda estão a acontecer.
+            </p>
+            <p>
+              É por isso que o NeoGeneralista existe: porque algumas pessoas simplesmente pensam
+              melhor quando deixam de escolher apenas um mundo ou uma caixa.
             </p>
             <blockquote className="ycs-about-quote">
               "Saímos com perguntas melhores — que é normalmente onde as mudanças começam."
@@ -304,6 +311,7 @@ export default function NeoGeneralista() {
 
       <section className="ycs-manifesto" id="manifesto">
         <div className="ycs-container ycs-manifesto-inner" data-reveal>
+          <h2 className="ycs-manifesto-title">Manifesto</h2>
           <p>O trabalho deixou de ser linear.</p>
           <p>A tecnologia não é, nem nunca foi, neutra.</p>
           <p>E as organizações nunca foram simples.</p>
