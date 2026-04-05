@@ -203,14 +203,16 @@ img {
 }
 
 .ycs-hero p {
-  font-size: clamp(3rem, 8.2vw, 7.7rem);
+  font-size: clamp(1.6rem, 5.5vw, 7.7rem);
   font-weight: 300;
   margin-bottom: 30px;
+  min-height: 1.2em;
 }
 
 .ycs-typewriter {
   color: #ff366b;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .ycs-hero span {
