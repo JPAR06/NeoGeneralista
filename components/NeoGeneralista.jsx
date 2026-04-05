@@ -214,7 +214,10 @@ export default function NeoGeneralista() {
             O NeoGeneralista nasce do cruzamento entre <em>inovação, tecnologia e pessoas.</em>
           </h2>
           <p>
-            Nem todos os problemas precisam de respostas rápidas. Alguns precisam de melhores perguntas.
+            Nem todos os problemas precisam de respostas rápidas.
+          </p>
+          <p>
+            Alguns precisam de melhores perguntas.
           </p>
           <p>
             E algumas perguntas merecem ser pensadas devagar.
@@ -256,7 +259,7 @@ export default function NeoGeneralista() {
             </blockquote>
           </div>
           <img
-            src="/1743868716855.jpeg"
+            src="/images/ana-azevedo.jpeg"
             alt="Ana Azevedo"
           />
         </div>
@@ -320,8 +323,8 @@ export default function NeoGeneralista() {
           <p>Simplificamos o que é complexo.</p>
           <p>E procuramos respostas rápidas para perguntas que ainda não sabemos fazer bem.</p>
           <p className="ycs-manifesto-gap ycs-manifesto-bold">O NeoGeneralista nasce para contrariar essa tendência.</p>
-          <p>Não para simplificar. Mas para compreender melhor.</p>
-          <p>Não para dar respostas fáceis, mas para tornar as perguntas mais interessantes.</p>
+          <p className="ycs-manifesto-closing">Não para simplificar. Mas para compreender melhor.</p>
+          <p className="ycs-manifesto-closing">Não para dar respostas fáceis, mas para tornar as perguntas mais interessantes.</p>
         </div>
       </section>
 
@@ -340,9 +343,10 @@ export default function NeoGeneralista() {
                   src={`/logos/${org.slug}.png`}
                   alt={org.name}
                   loading="lazy"
-                  onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }}
+                  onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.parentElement.querySelector(".ycs-org-fallback").style.display = "flex"; }}
                 />
                 <span className="ycs-org-fallback">{org.name}</span>
+                <span className="ycs-org-name">{org.name}</span>
               </div>
             ))}
           </div>
