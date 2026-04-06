@@ -212,14 +212,17 @@ export default function NeoGeneralista() {
       </header>
 
       {menuOpen && (
-        <div className="ycs-mobile-menu">
-          <a href="#about"     onClick={() => setMenuOpen(false)}>Sobre</a>
-          <a href="#percurso"  onClick={() => setMenuOpen(false)}>Percurso</a>
-          <a href="#services"  onClick={() => setMenuOpen(false)}>Serviços</a>
-          <a href="#manifesto" onClick={() => setMenuOpen(false)}>Manifesto</a>
-          <a href="#logos"     onClick={() => setMenuOpen(false)}>Organizações</a>
-          <a href="#contact"   onClick={() => setMenuOpen(false)}>Contacto</a>
-        </div>
+        <>
+          <div className="ycs-menu-backdrop" onClick={() => setMenuOpen(false)} />
+          <div className="ycs-mobile-menu">
+            <a href="#about"     onClick={() => setMenuOpen(false)}>Sobre</a>
+            <a href="#percurso"  onClick={() => setMenuOpen(false)}>Percurso</a>
+            <a href="#services"  onClick={() => setMenuOpen(false)}>Serviços</a>
+            <a href="#manifesto" onClick={() => setMenuOpen(false)}>Manifesto</a>
+            <a href="#logos"     onClick={() => setMenuOpen(false)}>Organizações</a>
+            <a href="#contact"   onClick={() => setMenuOpen(false)}>Contacto</a>
+          </div>
+        </>
       )}
 
       <section className="ycs-hero">
