@@ -100,6 +100,7 @@ export default function NeoGeneralista() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactMessage, setContactMessage] = useState("");
   const [contactSent, setContactSent] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Typewriter
   useEffect(() => {
@@ -196,8 +197,30 @@ export default function NeoGeneralista() {
             <a href="#logos">Organizações</a>
             <a href="#contact">Contacto</a>
           </nav>
+
+          <button
+            className="ycs-hamburger"
+            aria-label="Abrir menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            <span className="ycs-hb-line" />
+            <span className="ycs-hb-line" />
+            <span className="ycs-hb-line" />
+          </button>
         </div>
       </header>
+
+      {menuOpen && (
+        <div className="ycs-mobile-menu">
+          <a href="#about"     onClick={() => setMenuOpen(false)}>Sobre</a>
+          <a href="#percurso"  onClick={() => setMenuOpen(false)}>Percurso</a>
+          <a href="#services"  onClick={() => setMenuOpen(false)}>Serviços</a>
+          <a href="#manifesto" onClick={() => setMenuOpen(false)}>Manifesto</a>
+          <a href="#logos"     onClick={() => setMenuOpen(false)}>Organizações</a>
+          <a href="#contact"   onClick={() => setMenuOpen(false)}>Contacto</a>
+        </div>
+      )}
 
       <section className="ycs-hero">
         <div className="ycs-container ycs-hero-inner">
