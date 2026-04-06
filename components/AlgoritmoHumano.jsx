@@ -129,7 +129,7 @@ export default function AlgoritmoHumano({
         <div className="ahv4-container">
           <div className={`ahv4-events-grid ahv4-events-grid--${eventos.length === 2 ? "two" : "one"}`}>
             {eventos.length > 0 ? eventos.map((evento, i) => (
-              <Link key={evento._id ?? i} href="/algoritmo-humano/evento" className="ahv4-event-card">
+              <Link key={evento._id ?? i} href={`/algoritmo-humano/evento${evento._id ? `?id=${evento._id}` : ''}`} className="ahv4-event-card">
                 {evento.imagemEventoUrl ? (
                   <img src={evento.imagemEventoUrl} alt={evento.tema} className="ahv4-event-card-img" />
                 ) : (

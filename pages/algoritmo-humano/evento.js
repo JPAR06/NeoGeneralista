@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { getEventoProximo } from "../../lib/sanity";
+import { client, getEventoProximo } from "../../lib/sanity";
 
 export default function EventoDetalhe({ evento }) {
   const { data: session } = useSession();
@@ -285,31 +285,32 @@ export default function EventoDetalhe({ evento }) {
   );
 }
 
-export async function getStaticProps() {
+export async function getServerSideProps({ query }) {
   try {
-    const eventos = await getEventoProximo();
-    const evento = Array.isArray(eventos) ? eventos[0] : eventos;
+    let evento = null;
+
+    if (query.id) {
+      evento = await client.fetch(
+        `*[_type == "eventoProximo" && _id == $id][0]{
+          ...,
+          "imagemEventoUrl": imagemEvento.asset->url,
+          "fotosPostEventoUrls": fotosPostEvento[].asset->url
+        }`,
+        { id: query.id }
+      );
+    }
+
+    if (!evento) {
+      const eventos = await getEventoProximo();
+      evento = Array.isArray(eventos) ? eventos[0] : eventos;
+    }
+
     return {
-      props: {
-        evento: evento ?? {
-          edicao: "AlgoritmoHumano",
-          tema: "IA & Psicologia",
-          data: "3.ª feira - 7 de abril de 2026",
-          horario: "18h30 – 20h30",
-          local: "UPTEC Asprela",
-          convidado: "Andreia Silva Santos",
-          descricaoCurta: "Bem-vindo/a a este ciclo mensal de conversas dedicado a explorar de que forma a Inteligência Artificial está a transformar a sociedade em diferentes dimensões da vida humana.\n\nCada sessão conta com um/a convidado/a especialista e o público para uma conversa aberta e reflexiva sobre as oportunidades, desafios e questões que emergem na era das máquinas inteligentes.",
-          descricaoLonga: "Nesta sessão iremos explorar a relação entre Inteligência Artificial e Psicologia, refletindo sobre como as novas tecnologias estão a influenciar a forma como pensamos, sentimos e nos relacionamos. Da utilização de sistemas inteligentes no apoio psicológico às implicações da interação com máquinas no comportamento humano, esta conversa propõe-se discutir os desafios, possibilidades e questões éticas que emergem neste encontro entre mente humana e tecnologia.",
-          maxParticipantes: 50,
-          formularioAtivo: true,
-        },
-      },
-      revalidate: 60,
+      props: { evento: evento ?? null },
     };
   } catch {
     return {
       props: { evento: null },
-      revalidate: 60,
     };
   }
 }
