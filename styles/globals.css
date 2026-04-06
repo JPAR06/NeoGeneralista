@@ -1655,6 +1655,18 @@ img {
   margin-top: 10px;
 }
 
+/* ── EVENTOS GRID ── */
+.ahv4-events-grid {
+  display: grid;
+  gap: 24px;
+}
+.ahv4-events-grid--one { grid-template-columns: 1fr; }
+.ahv4-events-grid--two { grid-template-columns: 1fr 1fr; }
+
+@media (max-width: 768px) {
+  .ahv4-events-grid--two { grid-template-columns: 1fr; }
+}
+
 /* ── EVENTO CARD (landing) ── */
 .ahv4-event-card {
   background: #16161e;

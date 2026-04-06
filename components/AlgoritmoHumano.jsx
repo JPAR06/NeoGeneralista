@@ -14,7 +14,7 @@ const NAV_ITEMS = [
 
 
 export default function AlgoritmoHumano({
-  evento = null,
+  eventos = [],
   conversas = [],
   equipa = [],
   comunidade = [],
@@ -124,35 +124,39 @@ export default function AlgoritmoHumano({
         </div>
       </section>
 
-      {/* ── PRÓXIMO EVENTO ── */}
+      {/* ── PRÓXIMO(S) EVENTO(S) ── */}
       <section className="ahv4-section" id="evento">
         <div className="ahv4-container">
-          <Link href="/algoritmo-humano/evento" className="ahv4-event-card">
-            {evento?.imagemEventoUrl ? (
-              <img src={evento.imagemEventoUrl} alt={evento.tema} className="ahv4-event-card-img" />
-            ) : (
-              <div className="ahv4-event-card-img ahv4-event-card-img--placeholder" />
-            )}
-            <div className="ahv4-event-card-body">
-              <p className="ahv4-event-card-kicker">Próximo Evento</p>
-              <p className="ahv4-event-card-theme">{evento?.tema || "Em breve"}</p>
-              <div className="ahv4-event-card-meta">
-                {evento?.convidado && (
-                  <span className="ahv4-event-card-detail">🎤 {evento.convidado}</span>
+          <div className={`ahv4-events-grid ahv4-events-grid--${eventos.length === 2 ? "two" : "one"}`}>
+            {eventos.length > 0 ? eventos.map((evento, i) => (
+              <Link key={evento._id ?? i} href="/algoritmo-humano/evento" className="ahv4-event-card">
+                {evento.imagemEventoUrl ? (
+                  <img src={evento.imagemEventoUrl} alt={evento.tema} className="ahv4-event-card-img" />
+                ) : (
+                  <div className="ahv4-event-card-img ahv4-event-card-img--placeholder" />
                 )}
-                {evento?.data && (
-                  <span className="ahv4-event-card-detail">📅 {evento.data}</span>
-                )}
-                {evento?.horario && (
-                  <span className="ahv4-event-card-detail">🕡 {evento.horario}</span>
-                )}
-                {evento?.local && (
-                  <span className="ahv4-event-card-detail">📍 {evento.local}</span>
-                )}
+                <div className="ahv4-event-card-body">
+                  <p className="ahv4-event-card-kicker">{i === 0 ? "Próximo Evento" : "A Seguir"}</p>
+                  <p className="ahv4-event-card-theme">{evento.tema || "Em breve"}</p>
+                  <div className="ahv4-event-card-meta">
+                    {evento.convidado && <span className="ahv4-event-card-detail">🎤 {evento.convidado}</span>}
+                    {evento.data && <span className="ahv4-event-card-detail">📅 {evento.data}</span>}
+                    {evento.horario && <span className="ahv4-event-card-detail">🕡 {evento.horario}</span>}
+                    {evento.local && <span className="ahv4-event-card-detail">📍 {evento.local}</span>}
+                  </div>
+                  <span className="ahv4-event-card-cta">Inscreve-te →</span>
+                </div>
+              </Link>
+            )) : (
+              <div className="ahv4-event-card">
+                <div className="ahv4-event-card-img ahv4-event-card-img--placeholder" />
+                <div className="ahv4-event-card-body">
+                  <p className="ahv4-event-card-kicker">Próximo Evento</p>
+                  <p className="ahv4-event-card-theme">Em breve</p>
+                </div>
               </div>
-              <span className="ahv4-event-card-cta">Inscreve-te →</span>
-            </div>
-          </Link>
+            )}
+          </div>
         </div>
       </section>
 

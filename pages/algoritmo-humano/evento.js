@@ -287,7 +287,8 @@ export default function EventoDetalhe({ evento }) {
 
 export async function getStaticProps() {
   try {
-    const evento = await getEventoProximo();
+    const eventos = await getEventoProximo();
+    const evento = Array.isArray(eventos) ? eventos[0] : eventos;
     return {
       props: {
         evento: evento ?? {
