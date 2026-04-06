@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 
-const PARTICLE_COUNT = 60;
-const MAX_DIST = 200;
-const CORAL = "#F05A78";
-const MINT = "#7EDDB8";
+const PARTICLE_COUNT = 140;
+const MAX_DIST = 140;
+const CORAL = "240,90,120";
+const MINT = "126,221,184";
 
 export default function ConstellationCanvasAH() {
   const canvasRef = useRef(null);
@@ -12,23 +12,32 @@ export default function ConstellationCanvasAH() {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     let animId;
+    const mouse = { x: -9999, y: -9999 };
 
     const resize = () => {
-      const parent = canvas.parentElement;
-      canvas.width = parent ? parent.offsetWidth : window.innerWidth;
-      canvas.height = parent ? parent.offsetHeight : window.innerHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
     resize();
+    window.addEventListener("resize", resize);
 
-    const ro = new ResizeObserver(resize);
-    if (canvas.parentElement) ro.observe(canvas.parentElement);
+    const onMouseMove = (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    };
+    const onMouseLeave = () => {
+      mouse.x = -9999;
+      mouse.y = -9999;
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseleave", onMouseLeave);
 
     const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.25,
-      vy: (Math.random() - 0.5) * 0.25,
-      r: Math.random() * 3 + 2,
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      r: Math.random() * 1.5 + 1,
       color: Math.random() > 0.5 ? CORAL : MINT,
     }));
 
@@ -48,36 +57,33 @@ export default function ConstellationCanvasAH() {
           const dy = particles[i].y - particles[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < MAX_DIST) {
-            const alpha = (1 - dist / MAX_DIST) * 0.18;
-            // line colour blends between the two particle colours
-            const col = particles[i].color === particles[j].color
-              ? particles[i].color
-              : CORAL;
-            ctx.strokeStyle = col.replace(")", `,${alpha})`).replace("rgb", "rgba").replace("#F05A78", `rgba(240,90,120,${alpha})`).replace("#7EDDB8", `rgba(126,221,184,${alpha})`);
-
-            // simpler: just pick one colour with alpha
-            const r = particles[i].color === CORAL ? "240,90,120" : "126,221,184";
-            ctx.strokeStyle = `rgba(${r},${alpha})`;
-            ctx.lineWidth = 0.9;
+            ctx.strokeStyle = `rgba(${particles[i].color},${(1 - dist / MAX_DIST) * 0.12})`;
+            ctx.lineWidth = 0.8;
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
             ctx.stroke();
           }
         }
+
+        const mdx = particles[i].x - mouse.x;
+        const mdy = particles[i].y - mouse.y;
+        const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mdist < MAX_DIST) {
+          ctx.strokeStyle = `rgba(${particles[i].color},${(1 - mdist / MAX_DIST) * 0.3})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.stroke();
+        }
       }
 
       particles.forEach((p) => {
-        const isCoral = p.color === CORAL;
-        ctx.fillStyle = isCoral
-          ? `rgba(240,90,120,0.7)`
-          : `rgba(126,221,184,0.7)`;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 6;
+        ctx.fillStyle = `rgba(${p.color},0.65)`;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
       });
 
       animId = requestAnimationFrame(draw);
@@ -87,7 +93,9 @@ export default function ConstellationCanvasAH() {
 
     return () => {
       cancelAnimationFrame(animId);
-      ro.disconnect();
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseleave", onMouseLeave);
     };
   }, []);
 
@@ -95,10 +103,10 @@ export default function ConstellationCanvasAH() {
     <canvas
       ref={canvasRef}
       style={{
-        position: "absolute",
+        position: "fixed",
         inset: 0,
         pointerEvents: "none",
-        zIndex: 0,
+        zIndex: -1,
       }}
     />
   );
