@@ -15,8 +15,9 @@ export default async function handler(req, res) {
       email: process.env.SENDER_FROM_EMAIL,
     },
     to: { email: to, name: "Teste" },
-    subject: "Teste de email — AlgoritmoHumano",
-    html: "<p>Se estás a ver isto, o email está a funcionar! ✅</p>",
+    subject: "Teste de email - AlgoritmoHumano",
+    html: "<p>Se estas a ver isto, o email esta a funcionar.</p>",
+    text: "Se estas a ver isto, o email esta a funcionar.",
   };
 
   try {
