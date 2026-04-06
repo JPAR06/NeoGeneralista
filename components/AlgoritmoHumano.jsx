@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import ConstellationCanvasAH from "./ConstellationCanvasAH";
 import AuthButtons from "./AuthButtons";
+
+const ComunidadeAvatars = dynamic(() => import("./ComunidadeAvatars"), { ssr: false });
 
 const NAV_ITEMS = [
   { id: "sobre", label: "Sobre" },
@@ -17,19 +20,10 @@ export default function AlgoritmoHumano({
   eventos = [],
   conversas = [],
   equipa = [],
-  membros: initialMembros = [],
   patrocinadores = [],
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [membros, setMembros] = useState(initialMembros);
-
-  useEffect(() => {
-    fetch("/api/comunidade")
-      .then((r) => r.json())
-      .then((data) => { if (data.membros?.length > 0) setMembros(data.membros); })
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -48,9 +42,6 @@ export default function AlgoritmoHumano({
 
   const displayedConversas = conversas.length > 0 ? conversas : [];
   const [featured, ...sideTalks] = displayedConversas;
-
-  const visibleMembros = membros.slice(0, 20);
-  const extraMembros = membros.length > 20 ? membros.length - 20 : null;
 
   return (
     <div className="ahv4-page">
@@ -347,20 +338,7 @@ export default function AlgoritmoHumano({
             </Link>
           </div>
           <div className="ahv4-com-right">
-            {visibleMembros.length > 0 ? (
-              <div className="ahv4-av-mosaic">
-                {visibleMembros.map((m, i) => (
-                  <div key={i} className="ahv4-av" style={{ background: m.cor }}>
-                    {m.iniciais}
-                  </div>
-                ))}
-                {extraMembros !== null && (
-                  <div className="ahv4-av ahv4-av--more">+{extraMembros}</div>
-                )}
-              </div>
-            ) : (
-              <p className="ahv4-com-empty">Sê dos primeiros a juntar-te.</p>
-            )}
+            <ComunidadeAvatars />
           </div>
         </div>
       </section>
