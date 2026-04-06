@@ -17,19 +17,11 @@ export default function AlgoritmoHumano({
   eventos = [],
   conversas = [],
   equipa = [],
-  comunidade = [],
+  membros = [],
   patrocinadores = [],
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [membros, setMembros] = useState([]);
-
-  useEffect(() => {
-    fetch("/api/comunidade")
-      .then((r) => r.json())
-      .then((data) => setMembros(data.membros ?? []))
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
