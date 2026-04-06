@@ -4,10 +4,11 @@ export default function ComunidadeAvatars() {
   const [membros, setMembros] = useState([]);
 
   useEffect(() => {
+    console.log("[comunidade] fetching...");
     fetch("/api/comunidade")
-      .then((r) => r.json())
-      .then((data) => setMembros(data.membros ?? []))
-      .catch(console.error);
+      .then((r) => { console.log("[comunidade] status:", r.status); return r.json(); })
+      .then((data) => { console.log("[comunidade] data:", data); setMembros(data.membros ?? []); })
+      .catch((err) => console.error("[comunidade] fetch error:", err));
   }, []);
 
   if (membros.length === 0) {
