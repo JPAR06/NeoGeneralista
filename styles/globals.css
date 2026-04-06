@@ -223,15 +223,16 @@ img {
 .ycs-mobile-menu {
   animation: menuSlideDown 0.2s ease;
   background: #FFF8F6;
-  border-bottom: 1px solid #ececec;
+  bottom: 0;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   left: 0;
+  overflow-y: auto;
   padding: 4px 0 12px;
   position: fixed;
   right: 0;
-  top: 57px;
+  top: 92px;
   z-index: 49;
 }
 
