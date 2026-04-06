@@ -196,6 +196,7 @@ export default function NeoGeneralista() {
             <a href="#manifesto">Manifesto</a>
             <a href="#logos">Organizações</a>
             <a href="#contact">Contacto</a>
+            <a href="/algoritmo-humano">Algoritmo Humano</a>
           </nav>
 
           <button
@@ -218,6 +219,7 @@ export default function NeoGeneralista() {
             <a href="#manifesto" onClick={() => setMenuOpen(false)}>Manifesto</a>
             <a href="#logos"     onClick={() => setMenuOpen(false)}>Organizações</a>
             <a href="#contact"   onClick={() => setMenuOpen(false)}>Contacto</a>
+            <a href="/algoritmo-humano" onClick={() => setMenuOpen(false)}>Algoritmo Humano</a>
           </div>
         )}
       </header>

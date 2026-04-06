@@ -9,6 +9,8 @@ export default {
     { name: 'nome', title: 'Nome completo', type: 'string' },
     { name: 'funcao', title: 'Função/Cargo', type: 'string' },
     { name: 'bio', title: 'Bio', type: 'text' },
+    { name: 'linkedin', title: 'LinkedIn (URL)', type: 'url' },
+    { name: 'instagram', title: 'Instagram (ex: @ana.azevedo)', type: 'string' },
     { name: 'ativo', title: 'Membro ativo?', type: 'boolean' },
   ],
   preview: {

@@ -5,8 +5,8 @@ import { schemaTypes } from './sanity/schemaTypes'
 export default defineConfig({
   name: 'neogeneralista',
   title: 'NeoGeneralista',
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
+  projectId: '8yfcfj67',
+  dataset: 'production',
   plugins: [deskTool()],
   schema: { types: schemaTypes },
 })
