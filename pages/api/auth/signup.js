@@ -1,5 +1,17 @@
 import bcrypt from "bcryptjs";
 import clientPromise from "../../../lib/mongodb";
+import { writeClient } from "../../../lib/sanity";
+
+function colorFromName(name = "") {
+  const palette = ["#F05A78","#7EDDB8","#818cf8","#fb923c","#a78bfa","#f87171","#34d399","#60a5fa"];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return palette[Math.abs(hash) % palette.length];
+}
+
+function initialsFromName(name = "") {
+  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -29,14 +41,25 @@ export default async function handler(req, res) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
+    const trimmedName = name.trim();
+
     await db.collection("users").insertOne({
-      name: name.trim(),
+      name: trimmedName,
       email: normalizedEmail,
       passwordHash,
       consentimentoEventosFuturos: true,
       consentimentoDadosInvestigacao: true,
       createdAt: new Date(),
     });
+
+    // Create Sanity community member (non-blocking)
+    writeClient.create({
+      _type: "membroComunidade",
+      nome: trimmedName,
+      email: normalizedEmail,
+      iniciais: initialsFromName(trimmedName),
+      cor: colorFromName(trimmedName),
+    }).catch((err) => console.error("[sanity] membroComunidade create failed:", err));
 
     return res.status(201).json({ ok: true });
   } catch {

@@ -4,6 +4,18 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
 import clientPromise from "../../../lib/mongodb";
 import bcrypt from "bcryptjs";
+import { writeClient } from "../../../lib/sanity";
+
+function colorFromName(name = "") {
+  const palette = ["#F05A78","#7EDDB8","#818cf8","#fb923c","#a78bfa","#f87171","#34d399","#60a5fa"];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return palette[Math.abs(hash) % palette.length];
+}
+
+function initialsFromName(name = "") {
+  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+}
 
 export const authOptions = {
   adapter: MongoDBAdapter(clientPromise),
@@ -44,6 +56,18 @@ export const authOptions = {
   pages: {
     signIn: "/auth/entrar",
     error: "/auth/erro",
+  },
+  events: {
+    async createUser({ user }) {
+      // Fires when a new user is created (Google OAuth first sign-in)
+      writeClient.create({
+        _type: "membroComunidade",
+        nome: user.name ?? "",
+        email: user.email ?? "",
+        iniciais: initialsFromName(user.name ?? ""),
+        cor: colorFromName(user.name ?? ""),
+      }).catch((err) => console.error("[sanity] membroComunidade create failed:", err));
+    },
   },
   callbacks: {
     async jwt({ token, user }) {
