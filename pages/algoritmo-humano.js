@@ -5,63 +5,38 @@ import {
   getMembrosEquipa,
   getPatrocinadores,
 } from "../lib/sanity";
-import clientPromise from "../lib/mongodb";
-
-function colorFromName(name = "") {
-  const palette = ["#F05A78","#7EDDB8","#818cf8","#fb923c","#a78bfa","#f87171","#34d399","#60a5fa"];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return palette[Math.abs(hash) % palette.length];
-}
-
-function initialsFromName(name = "") {
-  return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
-}
 
 export default function AlgoritmoHumanoPage(props) {
   return <AlgoritmoHumano {...props} />;
 }
 
-export async function getServerSideProps() {
+export async function getServerSideProps({ req }) {
   try {
-    const [eventos, conversas, equipa, patrocinadores, mongoClient] = await Promise.all([
+    const protocol = req.headers["x-forwarded-proto"] || "http";
+    const host = req.headers.host;
+    const baseUrl = `${protocol}://${host}`;
+
+    const [eventos, conversas, equipa, patrocinadores, comunidadeRes] = await Promise.all([
       getEventoProximo(),
       getConversas(),
       getMembrosEquipa(),
       getPatrocinadores(),
-      clientPromise,
+      fetch(`${baseUrl}/api/comunidade`).then((r) => r.json()).catch(() => ({ membros: [] })),
     ]);
-
-    const db = mongoClient.db();
-    const users = await db
-      .collection("users")
-      .find({}, { projection: { name: 1, _id: 1 } })
-      .sort({ _id: 1 })
-      .toArray();
-
-    const membros = users
-      .filter((u) => u.name)
-      .map((u) => ({ iniciais: initialsFromName(u.name), cor: colorFromName(u.name) }));
 
     return {
       props: {
         eventos: eventos ?? [],
         conversas: conversas ?? [],
         equipa: equipa ?? [],
-        membros,
+        membros: comunidadeRes.membros ?? [],
         patrocinadores: patrocinadores ?? [],
       },
     };
   } catch (err) {
     console.error("[getServerSideProps]", err);
     return {
-      props: {
-        eventos: [],
-        conversas: [],
-        equipa: [],
-        membros: [],
-        patrocinadores: [],
-      },
+      props: { eventos: [], conversas: [], equipa: [], membros: [], patrocinadores: [] },
     };
   }
 }
