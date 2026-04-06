@@ -209,11 +209,8 @@ export default function NeoGeneralista() {
             <span className="ycs-hb-line" />
           </button>
         </div>
-      </header>
 
-      {menuOpen && (
-        <>
-          <div className="ycs-menu-backdrop" onClick={() => setMenuOpen(false)} />
+        {menuOpen && (
           <div className="ycs-mobile-menu">
             <a href="#about"     onClick={() => setMenuOpen(false)}>Sobre</a>
             <a href="#percurso"  onClick={() => setMenuOpen(false)}>Percurso</a>
@@ -222,7 +219,11 @@ export default function NeoGeneralista() {
             <a href="#logos"     onClick={() => setMenuOpen(false)}>Organizações</a>
             <a href="#contact"   onClick={() => setMenuOpen(false)}>Contacto</a>
           </div>
-        </>
+        )}
+      </header>
+
+      {menuOpen && (
+        <div className="ycs-menu-backdrop" onClick={() => setMenuOpen(false)} />
       )}
 
       <section className="ycs-hero">

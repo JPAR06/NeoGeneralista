@@ -226,7 +226,7 @@ img {
   left: 0;
   position: fixed;
   right: 0;
-  top: 92px;
+  top: 0;
   z-index: 48;
 }
 
@@ -234,14 +234,12 @@ img {
 .ycs-mobile-menu {
   animation: menuSlideDown 0.2s ease;
   background: #FFF8F6;
+  border-top: 1px solid #ececec;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  left: 0;
   padding: 4px 0 12px;
-  position: fixed;
-  right: 0;
-  top: 92px;
+  position: relative;
   z-index: 49;
 }
 
