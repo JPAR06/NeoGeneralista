@@ -4,7 +4,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
 import clientPromise from "../../../lib/mongodb";
 import bcrypt from "bcryptjs";
-import { writeClient } from "../../../lib/sanity";
+import { client, writeClient } from "../../../lib/sanity";
+import { addSubscriber } from "../../../lib/sender";
 
 function colorFromName(name = "") {
   const palette = ["#F05A78","#7EDDB8","#818cf8","#fb923c","#a78bfa","#f87171","#34d399","#60a5fa"];
@@ -60,13 +61,27 @@ export const authOptions = {
   events: {
     async createUser({ user }) {
       // Fires when a new user is created (Google OAuth first sign-in)
-      writeClient.create({
-        _type: "membroComunidade",
-        nome: user.name ?? "",
-        email: user.email ?? "",
-        iniciais: initialsFromName(user.name ?? ""),
-        cor: colorFromName(user.name ?? ""),
-      }).catch((err) => console.error("[sanity] membroComunidade create failed:", err));
+      const email = user.email ?? "";
+      const name = user.name ?? "";
+
+      // Create Sanity community member if not duplicate
+      client.fetch(`count(*[_type == "membroComunidade" && email == $email])`, { email })
+        .then((count) => {
+          if (count === 0) {
+            return writeClient.create({
+              _type: "membroComunidade",
+              nome: name,
+              email,
+              iniciais: initialsFromName(name),
+              cor: colorFromName(name),
+            });
+          }
+        })
+        .catch((err) => console.error("[sanity] membroComunidade create failed:", err));
+
+      // Add to Sender.net newsletter (Sender handles duplicates via upsert)
+      addSubscriber({ email, name })
+        .catch((err) => console.error("[sender] subscriber add failed:", err));
     },
   },
   callbacks: {
