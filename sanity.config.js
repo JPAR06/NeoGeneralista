@@ -29,7 +29,7 @@ export default defineConfig({
               ),
             S.documentTypeListItem('reserva').title('Todas as Reservas'),
             S.divider(),
-            S.documentTypeListItem('conversa').title('Conversas'),
+            S.documentTypeListItem('noticia').title('Blog / Notícias'),
             S.documentTypeListItem('membroEquipa').title('Equipa'),
             S.documentTypeListItem('membroComunidade').title('Comunidade'),
             S.documentTypeListItem('patrocinador').title('Patrocinadores'),
