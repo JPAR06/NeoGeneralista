@@ -9,6 +9,7 @@ export default {
     { name: 'dataISO', title: 'Data/Hora exacta (ISO)', type: 'datetime', description: 'Data e hora exactas do evento — usada para lembretes automáticos por email' },
     { name: 'horario', title: 'Horário', type: 'string', description: 'Ex: 18h30 – 20h30' },
     { name: 'local', title: 'Local', type: 'string', description: 'Ex: UPTEC Asprela' },
+    { name: 'localUrl', title: 'Link do Local (Google Maps)', type: 'url', description: 'URL do Google Maps ou website do local' },
     { name: 'convidado', title: 'Convidado/a', type: 'string', description: 'Nome do/a convidado/a' },
     { name: 'convidadoLinkedIn', title: 'LinkedIn do/a Convidado/a', type: 'url' },
     { name: 'convidadoInstagram', title: 'Instagram do/a Convidado/a', type: 'string', description: 'Ex: @andreia.silva' },

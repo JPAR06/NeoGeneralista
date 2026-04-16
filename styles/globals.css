@@ -994,7 +994,7 @@ img {
 }
 
 .ycs-org-name {
-  color: #1e293b;
+  color: #1d4ed8;
   font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -1964,6 +1964,13 @@ img {
 }
 
 .ev-social-link:hover { color: #fff; }
+
+.ev-local-link {
+  color: #7EDDB8;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.ev-local-link:hover { color: #fff; text-decoration: underline; }
 
 .ev-gallery {
   margin-top: 40px;

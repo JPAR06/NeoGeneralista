@@ -65,7 +65,6 @@ const organisations = [
   { slug: "universidade-coimbra", name: "Universidade de Coimbra", url: "https://www.uc.pt" },
   { slug: "zoomarine", name: "Zoomarine", url: "https://www.zoomarine.pt" },
   { slug: "oceanario-lisboa", name: "Oceanário de Lisboa", url: "https://www.oceanario.pt" },
-  { slug: "trendalert", name: "TrendAlert", url: "https://www.trendalert.me" },
   { slug: "paperjam", name: "Paperjam", url: "https://paperjam.lu" },
   { slug: "sogrape", name: "Sogrape", url: "https://www.sogrape.com" },
   { slug: "acisat", name: "ACISAT", url: "https://www.acisat.pt" },

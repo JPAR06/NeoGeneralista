@@ -139,7 +139,11 @@ export default function EventoDetalhe({ evento }) {
                     <span className="ev-meta-icon">📍</span>
                     <div>
                       <p className="ev-meta-label">Local</p>
-                      <p className="ev-meta-value">{evento.local}</p>
+                      <p className="ev-meta-value">
+                        {evento.localUrl ? (
+                          <a href={evento.localUrl} target="_blank" rel="noreferrer" className="ev-local-link">{evento.local}</a>
+                        ) : evento.local}
+                      </p>
                     </div>
                   </div>
                 )}
