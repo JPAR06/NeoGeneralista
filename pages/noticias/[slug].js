@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Head from "next/head";
 import { PortableText } from "@portabletext/react";
 import ConstellationCanvasAH from "../../components/ConstellationCanvasAH";
 import { getNoticias, getNoticia } from "../../lib/sanity";
@@ -25,8 +26,29 @@ export default function NoticiaPage({ noticia }) {
     );
   }
 
+  const pageTitle = `${noticia.titulo} | Algoritmo Humano`;
+  const pageDesc = noticia.resumo || `${noticia.titulo} — artigo do blog Algoritmo Humano.`;
+  const pageImage = noticia.imagemUrl || "https://neogeneralista.pt/algoritmo-humano-logo-cor.png";
+  const pageUrl = `https://neogeneralista.pt/noticias/${noticia.slug?.current}`;
+
   return (
     <div className="ahv4-page">
+      <Head>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDesc} />
+        <link rel="canonical" href={pageUrl} />
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDesc} />
+        <meta property="og:image" content={pageImage} />
+        <meta property="og:url" content={pageUrl} />
+        {noticia.dataPublicacao && <meta property="article:published_time" content={noticia.dataPublicacao} />}
+        {noticia.autor && <meta property="article:author" content={noticia.autor} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDesc} />
+        <meta name="twitter:image" content={pageImage} />
+      </Head>
       <ConstellationCanvasAH />
 
       {/* Nav */}

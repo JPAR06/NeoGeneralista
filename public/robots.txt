@@ -1,0 +1,30 @@
+# NeoGeneralista
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://neogeneralista.pt/sitemap.xml
+
+# AI crawlers welcome
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Block API and auth routes
+Disallow: /api/
+Disallow: /auth/
+Disallow: /studio/
