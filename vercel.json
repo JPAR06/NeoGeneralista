@@ -7,6 +7,14 @@
     {
       "path": "/api/sync-subscribers",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/sync-comunidade",
+      "schedule": "5 6 * * *"
+    },
+    {
+      "path": "/api/send-blog-notification",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

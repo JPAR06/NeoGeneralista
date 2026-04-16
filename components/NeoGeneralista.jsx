@@ -61,32 +61,32 @@ const services = [
 ];
 
 const organisations = [
-  { slug: "municipio-oeiras", name: "Município de Oeiras" },
-  { slug: "universidade-coimbra", name: "Universidade de Coimbra" },
-  { slug: "zoomarine", name: "Zoomarine" },
-  { slug: "oceanario-lisboa", name: "Oceanário de Lisboa" },
-  { slug: "trendalert", name: "TrendAlert" },
-  { slug: "paperjam", name: "Paperjam" },
-  { slug: "sogrape", name: "Sogrape" },
-  { slug: "acisat", name: "ACISAT" },
-  { slug: "isq", name: "Instituto de Soldadura e Qualidade" },
-  { slug: "le-cool-lisboa", name: "Le Cool Lisboa" },
-  { slug: "gerador", name: "Gerador" },
-  { slug: "jeronimo-martins", name: "Jerónimo Martins" },
-  { slug: "ese", name: "Escola Superior de Enfermagem" },
-  { slug: "farfetch", name: "Farfetch" },
-  { slug: "universidade-porto", name: "Universidade do Porto" },
-  { slug: "creativemornings", name: "CreativeMornings" },
-  { slug: "nova-sbe", name: "Nova SBE" },
-  { slug: "tera", name: "TERA" },
-  { slug: "unilinkr", name: "Unilinkr" },
-  { slug: "geek-girls", name: "Geek Girls" },
-  { slug: "chaperone", name: "Chaperone" },
-  { slug: "porto-business-school", name: "Porto Business School" },
-  { slug: "ipo-porto", name: "IPO Porto" },
-  { slug: "mota-engil", name: "Mota-Engil" },
-  { slug: "lactogal", name: "Lactogal" },
-  { slug: "curya", name: "Curya" },
+  { slug: "municipio-oeiras", name: "Município de Oeiras", url: "https://www.oeiras.pt" },
+  { slug: "universidade-coimbra", name: "Universidade de Coimbra", url: "https://www.uc.pt" },
+  { slug: "zoomarine", name: "Zoomarine", url: "https://www.zoomarine.pt" },
+  { slug: "oceanario-lisboa", name: "Oceanário de Lisboa", url: "https://www.oceanario.pt" },
+  { slug: "trendalert", name: "TrendAlert", url: "https://www.trendalert.me" },
+  { slug: "paperjam", name: "Paperjam", url: "https://paperjam.lu" },
+  { slug: "sogrape", name: "Sogrape", url: "https://www.sogrape.com" },
+  { slug: "acisat", name: "ACISAT", url: "https://www.acisat.pt" },
+  { slug: "isq", name: "Instituto de Soldadura e Qualidade", url: "https://www.isq.pt" },
+  { slug: "le-cool-lisboa", name: "Le Cool Lisboa", url: "https://lecool.com/lisboa" },
+  { slug: "gerador", name: "Gerador", url: "https://gerador.eu" },
+  { slug: "jeronimo-martins", name: "Jerónimo Martins", url: "https://www.jeronimomartins.com" },
+  { slug: "ese", name: "Escola Superior de Enfermagem", url: "https://www.esenf.pt" },
+  { slug: "farfetch", name: "Farfetch", url: "https://www.farfetch.com" },
+  { slug: "universidade-porto", name: "Universidade do Porto", url: "https://www.up.pt" },
+  { slug: "creativemornings", name: "CreativeMornings", url: "https://creativemornings.com" },
+  { slug: "nova-sbe", name: "Nova SBE", url: "https://www.novasbe.pt" },
+  { slug: "tera", name: "TERA", url: "https://tera.porto.pt/pt" },
+  { slug: "unilinkr", name: "Unilinkr", url: "https://universallinker.com/" },
+  { slug: "geek-girls", name: "Geek Girls", url: "https://geekgirlsportugal.pt/" },
+  { slug: "chaperone", name: "Chaperone", url: "https://chaperone.online/" },
+  { slug: "porto-business-school", name: "Porto Business School", url: "https://www.pbs.up.pt" },
+  { slug: "ipo-porto", name: "IPO Porto", url: "https://www.ipoporto.pt" },
+  { slug: "mota-engil", name: "Mota-Engil", url: "https://www.mota-engil.com" },
+  { slug: "lactogal", name: "Lactogal", url: "https://www.lactogal.pt" },
+  { slug: "curya", name: "Curya", url: "https://www.curya.com" },
 ];
 
 export default function NeoGeneralista() {
@@ -140,13 +140,23 @@ export default function NeoGeneralista() {
     return () => obs.disconnect();
   }, []);
 
-  const handleNewsletter = (event) => {
+  const handleNewsletter = async (event) => {
     event.preventDefault();
     if (!email || !name) return;
-    setSubscribed(true);
-    setEmail("");
-    setName("");
-    setTimeout(() => setSubscribed(false), 3500);
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name }),
+      });
+      if (!res.ok) throw new Error();
+      setSubscribed(true);
+      setEmail("");
+      setName("");
+      setTimeout(() => setSubscribed(false), 3500);
+    } catch {
+      alert("Erro ao subscrever. Tenta novamente.");
+    }
   };
 
   const handleContact = (event) => {
@@ -367,7 +377,7 @@ export default function NeoGeneralista() {
           </p>
           <div className="ycs-org-grid">
             {organisations.map((org) => (
-              <div key={org.slug} className="ycs-org-item">
+              <a key={org.slug} href={org.url} target="_blank" rel="noreferrer" className="ycs-org-item">
                 <img
                   src={`/logos/${org.slug}.png`}
                   alt={org.name}
@@ -376,7 +386,7 @@ export default function NeoGeneralista() {
                 />
                 <span className="ycs-org-fallback">{org.name}</span>
                 <span className="ycs-org-name">{org.name}</span>
-              </div>
+              </a>
             ))}
           </div>
         </div>

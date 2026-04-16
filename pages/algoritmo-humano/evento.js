@@ -61,12 +61,22 @@ export default function EventoDetalhe({ evento }) {
     }
   };
 
-  const handleSubscribe = (e) => {
+  const handleSubscribe = async (e) => {
     e.preventDefault();
     if (!email) return;
-    setSubscribed(true);
-    setEmail("");
-    setTimeout(() => setSubscribed(false), 4000);
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name: "" }),
+      });
+      if (!res.ok) throw new Error();
+      setSubscribed(true);
+      setEmail("");
+      setTimeout(() => setSubscribed(false), 4000);
+    } catch {
+      alert("Erro ao subscrever. Tenta novamente.");
+    }
   };
 
   const spotsLeft = evento?.maxParticipantes ? evento.maxParticipantes - contagem : null;
@@ -147,16 +157,22 @@ export default function EventoDetalhe({ evento }) {
                     <span className="ev-meta-icon">🎤</span>
                     <div>
                       <p className="ev-meta-label">Convidado/a</p>
-                      <p className="ev-meta-value">{evento.convidado}</p>
+                      <p className="ev-meta-value">
+                        {evento.convidadoInstagram ? (
+                          <a
+                            href={evento.convidadoInstagram.startsWith('http') ? evento.convidadoInstagram : `https://instagram.com/${evento.convidadoInstagram.replace('@','')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="ev-speaker-name-link"
+                          >
+                            {evento.convidado}
+                          </a>
+                        ) : evento.convidado}
+                      </p>
                       <div className="ev-speaker-socials">
                         {evento.convidadoLinkedIn && (
                           <a href={evento.convidadoLinkedIn} target="_blank" rel="noreferrer" className="ev-social-link">
                             LinkedIn
-                          </a>
-                        )}
-                        {evento.convidadoInstagram && (
-                          <a href={`https://instagram.com/${evento.convidadoInstagram.replace('@','')}`} target="_blank" rel="noreferrer" className="ev-social-link">
-                            {evento.convidadoInstagram}
                           </a>
                         )}
                       </div>
@@ -175,6 +191,17 @@ export default function EventoDetalhe({ evento }) {
                   <div className="ev-gallery-grid">
                     {evento.fotosPostEventoUrls.map((url, i) => (
                       <img key={i} src={url} alt={`Foto ${i + 1}`} className="ev-gallery-img" />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {evento?.videosEventoUrls?.length > 0 && (
+                <div className="ev-gallery">
+                  <p className="ev-gallery-title">Vídeos do evento</p>
+                  <div className="ev-video-grid">
+                    {evento.videosEventoUrls.map((url, i) => (
+                      <video key={i} src={url} controls className="ev-video" />
                     ))}
                   </div>
                 </div>
@@ -294,7 +321,8 @@ export async function getServerSideProps({ query }) {
         `*[_type == "eventoProximo" && _id == $id][0]{
           ...,
           "imagemEventoUrl": imagemEvento.asset->url,
-          "fotosPostEventoUrls": fotosPostEvento[].asset->url
+          "fotosPostEventoUrls": fotosPostEvento[].asset->url,
+          "videosEventoUrls": videosEvento[].asset->url
         }`,
         { id: query.id }
       );

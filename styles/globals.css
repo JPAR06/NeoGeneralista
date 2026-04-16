@@ -972,11 +972,14 @@ img {
   border: 1px solid rgba(100, 116, 139, 0.18);
   border-radius: 14px;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  color: inherit;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-height: 74px;
   padding: 12px 14px;
+  text-decoration: none;
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
@@ -1254,6 +1257,27 @@ img {
 .ahv4-nav-logo-img {
   height: 44px;
   width: auto;
+}
+
+.ahv4-nav-brand {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+.ahv4-nav-back {
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  text-decoration: none;
+  transition: color 0.2s, border-color 0.2s;
+}
+.ahv4-nav-back:hover {
+  border-color: rgba(240,90,120,0.4);
+  color: #F05A78;
 }
 
 .ahv4-nav-links {
@@ -1967,6 +1991,18 @@ img {
   width: 100%;
 }
 
+.ev-video-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+.ev-video {
+  border-radius: 10px;
+  width: 100%;
+  max-height: 360px;
+  background: #000;
+}
+
 .ev-desc-longa {
   border-left: 2px solid rgba(240, 90, 120, 0.35);
   color: rgba(255, 255, 255, 0.5);
@@ -2639,6 +2675,214 @@ img {
 .ahv4-pat-slot--empty {
   color: rgba(255, 255, 255, 0.2);
   font-size: 0.85rem;
+}
+
+/* ── BLOG ── */
+.blog-main {
+  min-height: 100vh;
+  padding: 100px 0 60px;
+  position: relative;
+  z-index: 1;
+}
+.blog-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.blog-header {
+  margin-bottom: 48px;
+  text-align: center;
+}
+.blog-title {
+  color: #fff;
+  font-size: 2.4rem;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+.blog-subtitle {
+  color: #999;
+  font-size: 1rem;
+}
+.blog-chip {
+  background: rgba(240,90,120,0.15);
+  border-radius: 20px;
+  color: #F05A78;
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  text-transform: uppercase;
+}
+.blog-chip--sm { font-size: 0.65rem; padding: 3px 10px; }
+.blog-meta {
+  color: #777;
+  display: flex;
+  gap: 12px;
+  font-size: 0.82rem;
+  margin-top: 8px;
+}
+.blog-meta--article { font-size: 0.9rem; margin-top: 12px; }
+
+/* Featured card */
+.blog-featured {
+  background: rgba(22,22,30,0.85);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  color: inherit;
+  display: grid;
+  gap: 0;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 40px;
+  overflow: hidden;
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+.blog-featured:hover { border-color: rgba(240,90,120,0.3); }
+.blog-featured-img {
+  height: 100%;
+  min-height: 280px;
+  object-fit: cover;
+  width: 100%;
+}
+.blog-featured-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+  padding: 32px;
+}
+.blog-featured-title {
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+}
+.blog-featured-resumo {
+  color: #aaa;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Grid */
+.blog-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(2, 1fr);
+}
+.blog-card {
+  background: rgba(22,22,30,0.85);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  color: inherit;
+  overflow: hidden;
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+.blog-card:hover { border-color: rgba(240,90,120,0.3); }
+.blog-card-img {
+  height: 180px;
+  object-fit: cover;
+  width: 100%;
+}
+.blog-card-img--placeholder {
+  background: linear-gradient(135deg, #1a0a10, #16161e);
+}
+.blog-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+}
+.blog-card-title {
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+}
+.blog-card-resumo {
+  color: #999;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Article detail */
+.blog-article { position: relative; z-index: 1; }
+.blog-article-hero {
+  margin: 0 auto;
+  max-width: 960px;
+  padding: 0 24px;
+}
+.blog-article-hero-img {
+  border-radius: 16px;
+  max-height: 420px;
+  object-fit: cover;
+  width: 100%;
+}
+.blog-article-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 24px 60px;
+}
+.blog-article-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.blog-article-title {
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0;
+}
+.blog-article-body {
+  color: #ccc;
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+.blog-article-body p { margin: 0 0 1.2em; }
+.blog-article-body h2 { color: #fff; font-size: 1.4rem; margin: 2em 0 0.6em; }
+.blog-article-body h3 { color: #fff; font-size: 1.2rem; margin: 1.6em 0 0.5em; }
+.blog-article-body ul, .blog-article-body ol { padding-left: 1.4em; margin: 0 0 1.2em; }
+.blog-article-body blockquote {
+  border-left: 3px solid #F05A78;
+  color: #aaa;
+  font-style: italic;
+  margin: 1.5em 0;
+  padding-left: 20px;
+}
+.blog-content-img {
+  border-radius: 12px;
+  margin: 1.5em 0;
+  max-width: 100%;
+}
+.blog-article-footer {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: 48px;
+  padding-top: 24px;
+}
+.blog-back-link {
+  color: #F05A78;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.blog-back-link:hover { text-decoration: underline; }
+
+@media (max-width: 640px) {
+  .blog-featured { grid-template-columns: 1fr; }
+  .blog-featured-img { min-height: 200px; }
+  .blog-grid { grid-template-columns: 1fr; }
+  .blog-article-title { font-size: 1.5rem; }
 }
 
 /* ── FOOTER ── */
@@ -3418,6 +3662,39 @@ img {
   position: relative;
   width: 64px;
   z-index: 1;
+}
+.ahv4-perfil-avatar--img {
+  object-fit: cover;
+  padding: 0;
+  background: none;
+}
+.ahv4-perfil-avatar-label {
+  cursor: pointer;
+  position: relative;
+  display: block;
+}
+.ahv4-perfil-avatar-overlay {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: #1e1e2a;
+  border: 2px solid #0c0c10;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  z-index: 2;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+.ahv4-perfil-avatar-label:hover .ahv4-perfil-avatar-overlay {
+  opacity: 1;
+}
+.ahv4-perfil-avatar-input {
+  display: none;
 }
 
 .ahv4-perfil-header-info {

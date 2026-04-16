@@ -1,5 +1,5 @@
-import conversa from './conversa'
 import eventoProximo from './eventoProximo'
+import noticia from './noticia'
 import reserva from './reserva'
 import membroEquipa from './membroEquipa'
 import membroComunidade from './membroComunidade'
@@ -9,8 +9,8 @@ import servico from './servico'
 import logoCliente from './logoCliente'
 
 export const schemaTypes = [
-  conversa,
   eventoProximo,
+  noticia,
   reserva,
   membroEquipa,
   membroComunidade,

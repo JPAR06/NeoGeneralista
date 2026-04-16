@@ -1,4 +1,5 @@
 import { client } from "../../lib/sanity";
+import clientPromise from "../../lib/mongodb";
 
 // Protected export — access via:
 // /api/exportar-reservas?secret=YOUR_CRON_SECRET
@@ -28,15 +29,34 @@ export default async function handler(req, res) {
 
   const reservas = await client.fetch(query, params);
 
+  // Enrich with MongoDB profile data
+  const emails = [...new Set(reservas.map((r) => r.email).filter(Boolean))];
+  const mongo = await clientPromise;
+  const users = await mongo.db()
+    .collection("users")
+    .find({ email: { $in: emails } }, {
+      projection: { email: 1, situacaoProfissional: 1, faixaEtaria: 1, habilitacoes: 1, setorProfissional: 1, _id: 0 },
+    })
+    .toArray();
+
+  const profileMap = new Map(users.map((u) => [u.email, u]));
+
   const rows = [
-    ["Nome", "Email", "Estado", "EventoId", "Data de inscrição"],
-    ...reservas.map((r) => [
-      r.nome ?? "",
-      r.email ?? "",
-      r.estado ?? "",
-      r.eventoId ?? "",
-      r._createdAt ? new Date(r._createdAt).toLocaleString("pt-PT") : "",
-    ]),
+    ["Nome", "Email", "Estado", "EventoId", "Data de inscrição", "Situação Profissional", "Faixa Etária", "Habilitações", "Setor Profissional"],
+    ...reservas.map((r) => {
+      const p = profileMap.get(r.email) ?? {};
+      return [
+        r.nome ?? "",
+        r.email ?? "",
+        r.estado ?? "",
+        r.eventoId ?? "",
+        r._createdAt ? new Date(r._createdAt).toLocaleString("pt-PT") : "",
+        p.situacaoProfissional ?? "",
+        p.faixaEtaria ?? "",
+        p.habilitacoes ?? "",
+        p.setorProfissional ?? "",
+      ];
+    }),
   ];
 
   const csv = rows.map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");

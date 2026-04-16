@@ -27,6 +27,13 @@ export default {
       description: 'Galeria de fotos carregadas após o evento',
     },
     {
+      name: 'videosEvento',
+      title: 'Vídeos do Evento',
+      type: 'array',
+      of: [{ type: 'file', options: { accept: 'video/*' } }],
+      description: 'Vídeos do evento (upload direto)',
+    },
+    {
       name: 'descricaoCurta',
       title: 'Descrição Curta',
       type: 'text',

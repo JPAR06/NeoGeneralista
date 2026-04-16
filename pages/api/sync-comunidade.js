@@ -16,7 +16,9 @@ function initialsFromName(name = "") {
 }
 
 export default async function handler(req, res) {
-  if (req.query.secret !== process.env.CRON_SECRET) {
+  const secret = req.query.secret
+    || req.headers["authorization"]?.replace("Bearer ", "");
+  if (secret !== process.env.CRON_SECRET) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

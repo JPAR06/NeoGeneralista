@@ -9,7 +9,6 @@ const ComunidadeAvatars = dynamic(() => import("./ComunidadeAvatars"), { ssr: fa
 const NAV_ITEMS = [
   { id: "sobre", label: "Sobre" },
   { id: "evento", label: "Evento" },
-  { id: "conversas", label: "Conversas" },
   { id: "equipa", label: "Equipa" },
   { id: "comunidade", label: "Comunidade" },
   { id: "patrocinadores", label: "Patrocinadores" },
@@ -18,7 +17,6 @@ const NAV_ITEMS = [
 
 export default function AlgoritmoHumano({
   eventos = [],
-  conversas = [],
   equipa = [],
   patrocinadores = [],
 }) {
@@ -40,24 +38,25 @@ export default function AlgoritmoHumano({
     }
   };
 
-  const displayedConversas = conversas.length > 0 ? conversas : [];
-  const [featured, ...sideTalks] = displayedConversas;
-
   return (
     <div className="ahv4-page">
 
       {/* ── NAV ── */}
       <header className={`ahv4-nav${scrolled ? " ahv4-nav--scrolled" : ""}`}>
         <div className="ahv4-container ahv4-nav-inner">
-          <Link href="/algoritmo-humano" className="ahv4-nav-logo">
-            <img src="/algoritmo-humano-logo-cor.png" alt="AlgoritmoHumano" className="ahv4-nav-logo-img" />
-          </Link>
+          <div className="ahv4-nav-brand">
+            <Link href="/" className="ahv4-nav-back" title="Voltar ao NeoGeneralista">← Neo</Link>
+            <Link href="/algoritmo-humano" className="ahv4-nav-logo">
+              <img src="/algoritmo-humano-logo-cor.png" alt="AlgoritmoHumano" className="ahv4-nav-logo-img" />
+            </Link>
+          </div>
           <nav className="ahv4-nav-links" aria-label="Navegação principal">
             {NAV_ITEMS.map((item) => (
               <button key={item.id} className="ahv4-nav-link" onClick={() => scrollTo(item.id)}>
                 {item.label}
               </button>
             ))}
+            <Link href="/noticias" className="ahv4-nav-link">Blog</Link>
           </nav>
           <div className="ahv4-nav-end">
             <AuthButtons />
@@ -85,6 +84,7 @@ export default function AlgoritmoHumano({
                   {item.label}
                 </button>
               ))}
+              <Link href="/noticias" className="ahv4-mobile-link">Blog</Link>
               <div className="ahv4-mobile-auth">
                 <AuthButtons />
               </div>
@@ -151,85 +151,6 @@ export default function AlgoritmoHumano({
         </div>
       </section>
 
-      {/* ── CONVERSAS ── */}
-      <section className="ahv4-section ahv4-section--tinted" id="conversas">
-        <div className="ahv4-container">
-          <div className="ahv4-section-header">
-            <div>
-              <div className="ahv4-section-kicker">Conversas</div>
-              <h2 className="ahv4-section-h2">Todas as edições</h2>
-            </div>
-          </div>
-
-          {displayedConversas.length === 0 ? (
-            <div className="ahv4-empty-state">
-              <div className="ahv4-empty-icon">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none" />
-                </svg>
-              </div>
-              <p className="ahv4-empty-title">Em breve, a primeira conversa</p>
-              <p className="ahv4-empty-sub">
-                Estamos a preparar o primeiro episódio. Subscreve para seres dos primeiros a saber.
-              </p>
-            </div>
-          ) : (
-            <div className="ahv4-mag-layout">
-              <div
-                className="ahv4-mag-featured"
-                style={{ background: featured.cor || "linear-gradient(135deg, #1a0a10, #0c0c10)" }}
-              >
-                <div className="ahv4-mag-overlay">
-                  <div className="ahv4-mag-featured-top">
-                    <span className="ahv4-tema-tag">{featured.tema}</span>
-                    <span className="ahv4-edition-num">#{featured.numero}</span>
-                  </div>
-                  <div className="ahv4-mag-featured-body">
-                    <p className="ahv4-mag-speaker">{featured.orador}</p>
-                    <h3 className="ahv4-mag-talk-title">"{featured.titulo}"</h3>
-                    <div className="ahv4-mag-meta">
-                      <span>{featured.data}</span>
-                      <span>·</span>
-                      <span>{featured.duracao}</span>
-                      <span>·</span>
-                      <span>♥ {featured.coracoes}</span>
-                    </div>
-                    <a href={`/conversa/${featured.numero}`} className="ahv4-play-btn">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="5,3 19,12 5,21" />
-                      </svg>
-                      Ver conversa
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <div className="ahv4-mag-list">
-                {sideTalks.map((c, i) => (
-                  <a key={i} className="ahv4-mag-item" href={`/conversa/${c.numero}`}>
-                    <div className="ahv4-mag-thumb" style={{ background: c.cor || "#16161e" }}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="white">
-                        <polygon points="5,3 19,12 5,21" />
-                      </svg>
-                    </div>
-                    <div className="ahv4-mag-item-body">
-                      <div className="ahv4-mag-item-top">
-                        <span className="ahv4-tema-tag ahv4-tema-tag--sm">{c.tema}</span>
-                        <span className="ahv4-mag-item-date">{c.data}</span>
-                      </div>
-                      <p className="ahv4-mag-item-speaker">{c.orador}</p>
-                      <p className="ahv4-mag-item-title">"{c.titulo}"</p>
-                    </div>
-                    <span className="ahv4-mag-item-hearts">♥ {c.coracoes}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
       {/* ── SOBRE ── */}
       <section className="ahv4-section ahv4-section--dark" id="sobre">
         <div className="ahv4-container ahv4-sobre-layout">
@@ -277,7 +198,7 @@ export default function AlgoritmoHumano({
                     {m.bio && <p className="ahv4-team-bio">{m.bio}</p>}
                     <div className="ev-speaker-socials">
                       {m.linkedin && <a href={m.linkedin} target="_blank" rel="noreferrer" className="ev-social-link">LinkedIn</a>}
-                      {m.instagram && <a href={`https://instagram.com/${m.instagram.replace('@','')}`} target="_blank" rel="noreferrer" className="ev-social-link">{m.instagram}</a>}
+                      {m.instagram && <a href={m.instagram.startsWith('http') ? m.instagram : `https://instagram.com/${m.instagram.replace('@','')}`} target="_blank" rel="noreferrer" className="ev-social-link">{m.instagram}</a>}
                     </div>
                   </div>
                 </div>
@@ -382,14 +303,14 @@ export default function AlgoritmoHumano({
                 <Link href="/" className="ahv4-footer-hl">NeoGeneralista</Link>.
               </p>
               <div className="ahv4-footer-socials">
-                <a href="https://instagram.com" target="_blank" rel="noreferrer" className="ahv4-footer-soc" aria-label="Instagram">
+                <a href="https://www.instagram.com/algoritmohumano.pt/" target="_blank" rel="noreferrer" className="ahv4-footer-soc" aria-label="Instagram">
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" viewBox="0 0 24 24">
                     <rect x="2" y="2" width="20" height="20" rx="5" />
                     <circle cx="12" cy="12" r="4" />
                     <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
                   </svg>
                 </a>
-                <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="ahv4-footer-soc" aria-label="LinkedIn">
+                <a href="https://www.linkedin.com/company/101577110/" target="_blank" rel="noreferrer" className="ahv4-footer-soc" aria-label="LinkedIn">
                   <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" />
                     <rect x="2" y="9" width="4" height="12" />

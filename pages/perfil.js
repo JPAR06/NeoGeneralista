@@ -33,6 +33,8 @@ export default function Perfil({ session }) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -48,6 +50,7 @@ export default function Perfil({ session }) {
           consentimentoEventosFuturos: data.consentimentoEventosFuturos ?? true,
           consentimentoDadosInvestigacao: data.consentimentoDadosInvestigacao ?? true,
         });
+        if (data.avatar) setAvatarUrl(data.avatar);
       });
   }, []);
 
@@ -74,6 +77,33 @@ export default function Perfil({ session }) {
     }
   };
 
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setError("Seleciona uma imagem válida."); return; }
+    if (file.size > 1_500_000) { setError("Imagem demasiado grande (máx. 1.5MB)."); return; }
+
+    setUploadingAvatar(true);
+    setError("");
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result;
+      const res = await fetch("/api/upload-avatar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64 }),
+      });
+      setUploadingAvatar(false);
+      if (res.ok) {
+        setAvatarUrl(base64);
+      } else {
+        setError("Erro ao carregar foto. Tenta novamente.");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const displayName = form.name || session?.user?.name || "";
   const initials = displayName
     ? displayName.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase()
@@ -87,7 +117,23 @@ export default function Perfil({ session }) {
       <div className="ahv4-auth-card ahv4-perfil-card">
         <div className="ahv4-perfil-header">
           <div className="ahv4-perfil-avatar-wrap">
-            <div className="ahv4-perfil-avatar">{initials}</div>
+            <label className="ahv4-perfil-avatar-label" title="Alterar foto">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="ahv4-perfil-avatar ahv4-perfil-avatar--img" />
+              ) : (
+                <div className="ahv4-perfil-avatar">{initials}</div>
+              )}
+              <span className="ahv4-perfil-avatar-overlay">
+                {uploadingAvatar ? "…" : "📷"}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="ahv4-perfil-avatar-input"
+                disabled={uploadingAvatar}
+              />
+            </label>
           </div>
           <div className="ahv4-perfil-header-info">
             <p className="ahv4-perfil-name">{displayName || session?.user?.email?.split("@")[0] || "—"}</p>
