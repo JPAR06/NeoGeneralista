@@ -43,19 +43,6 @@ export default function Document() {
                   publisher: { "@id": "https://neogeneralista.pt/#organization" },
                   inLanguage: "pt-PT",
                 },
-                {
-                  "@type": "Event",
-                  name: "Algoritmo Humano",
-                  description: "Conversas mensais sobre a interseção entre humanos e inteligência artificial.",
-                  url: "https://neogeneralista.pt/algoritmo-humano",
-                  eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-                  location: { "@type": "Place", name: "Porto, Portugal" },
-                  organizer: { "@id": "https://neogeneralista.pt/#organization" },
-                  eventSchedule: {
-                    "@type": "Schedule",
-                    repeatFrequency: "P1M",
-                  },
-                },
               ],
             }),
           }}

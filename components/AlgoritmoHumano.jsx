@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import Head from "next/head";
 import ConstellationCanvasAH from "./ConstellationCanvasAH";
 import AuthButtons from "./AuthButtons";
 
@@ -38,8 +39,68 @@ export default function AlgoritmoHumano({
     }
   };
 
+  const eventJsonLd = eventos.length > 0 ? eventos.map((evento) => {
+    const startDate = evento.dataISO || null;
+    const horario = evento.horario || "";
+    const endMatch = horario.match(/[–-]\s*(\d{1,2})h(\d{2})?/);
+    let endDate = null;
+    if (startDate && endMatch) {
+      const d = new Date(startDate);
+      d.setHours(parseInt(endMatch[1], 10), parseInt(endMatch[2] || "0", 10));
+      endDate = d.toISOString();
+    }
+
+    return {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      name: evento.tema ? `Algoritmo Humano — ${evento.tema}` : "Algoritmo Humano",
+      description: evento.descricaoCurta || "Conversas mensais sobre a interseção entre humanos e inteligência artificial.",
+      url: "https://neogeneralista.pt/algoritmo-humano",
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+      eventStatus: "https://schema.org/EventScheduled",
+      ...(startDate && { startDate }),
+      ...(endDate && { endDate }),
+      location: {
+        "@type": "Place",
+        name: evento.local || "Porto",
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Porto",
+          addressCountry: "PT",
+        },
+      },
+      organizer: {
+        "@type": "Organization",
+        name: "NeoGeneralista",
+        url: "https://neogeneralista.pt",
+      },
+      ...(evento.convidado && {
+        performer: {
+          "@type": "Person",
+          name: evento.convidado,
+        },
+      }),
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "EUR",
+        availability: evento.formularioAtivo ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+        url: "https://neogeneralista.pt/algoritmo-humano",
+      },
+      ...(evento.imagemEventoUrl && { image: evento.imagemEventoUrl }),
+    };
+  }) : [];
+
   return (
     <div className="ahv4-page">
+      {eventJsonLd.map((ld, i) => (
+        <Head key={i}>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
+          />
+        </Head>
+      ))}
 
       {/* ── NAV ── */}
       <header className={`ahv4-nav${scrolled ? " ahv4-nav--scrolled" : ""}`}>
