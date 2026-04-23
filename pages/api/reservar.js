@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
 import { client, writeClient } from "../../lib/sanity";
 import { sendEmail } from "../../lib/email";
+import { buildEventIcs, buildGoogleCalendarUrl } from "../../lib/ics";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -49,12 +50,30 @@ export default async function handler(req, res) {
     ? `Inscricao confirmada - ${evento.edicao ?? "Algoritmo Humano"}`
     : `Lista de espera - ${evento.edicao ?? "Algoritmo Humano"}`;
 
+  // Attach .ics (Apple Calendar / Outlook / etc.) only when confirmed —
+  // waitlist reservations don't get a calendar entry.
+  let attachments;
+  if (estado === "confirmado" && evento.dataISO) {
+    try {
+      const ics = buildEventIcs({
+        evento,
+        attendeeEmail: session.user.email,
+        attendeeName: session.user.name,
+        organizerEmail: process.env.SENDER_FROM_EMAIL,
+      });
+      attachments = [{ name: "evento.ics", type: "text/calendar; charset=utf-8; method=REQUEST", content: ics }];
+    } catch (err) {
+      console.error("[ics] failed to build calendar file:", err);
+    }
+  }
+
   sendEmail({
     to: session.user.email,
     toName: session.user.name,
     subject: emailSubject,
     html: buildConfirmationEmail({ session, evento, estado }),
     text: buildConfirmationText({ session, evento, estado }),
+    attachments,
   }).catch((err) => console.error("[email] confirmation failed:", err));
 
   return res.status(200).json({ estado });
@@ -65,6 +84,18 @@ function buildConfirmationEmail({ session, evento, estado }) {
   const statusText = isConfirmed
     ? "A tua inscricao esta <strong>confirmada</strong>."
     : "Estás na <strong>lista de espera</strong>. Avisamos-te se abrir vaga.";
+
+  const googleUrl = isConfirmed && evento.dataISO ? buildGoogleCalendarUrl({ evento }) : null;
+  const calendarBlock = isConfirmed && evento.dataISO
+    ? `
+      <div style="margin:20px 0;padding:16px;background:#f9f9f9;border-radius:6px">
+        <p style="margin:0 0 10px;font-size:14px"><strong>Adiciona ao teu calendário</strong></p>
+        ${googleUrl ? `<p style="margin:0 0 6px;font-size:13px">
+          <a href="${googleUrl}" style="display:inline-block;padding:8px 14px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none">Google Calendar</a>
+        </p>` : ""}
+        <p style="margin:6px 0 0;font-size:12px;color:#777">Utilizadores Apple / Outlook: abre o ficheiro <code>evento.ics</code> em anexo.</p>
+      </div>`
+    : "";
 
   return `<!DOCTYPE html>
 <html lang="pt">
@@ -84,6 +115,7 @@ function buildConfirmationEmail({ session, evento, estado }) {
         ${evento.local ? `<tr><td style="padding:8px 0;color:#555;border-bottom:1px solid #f0f0f0">Local</td><td style="padding:8px 0;border-bottom:1px solid #f0f0f0"><strong>${evento.local}</strong></td></tr>` : ""}
         ${evento.convidado ? `<tr><td style="padding:8px 0;color:#555">Convidado/a</td><td style="padding:8px 0"><strong>${evento.convidado}</strong></td></tr>` : ""}
       </table>
+      ${calendarBlock}
       <p style="font-size:13px;color:#555">Qualquer questao, responde a este email ou contacta-nos em <a href="mailto:ana@neogeneralista.pt" style="color:#555">ana@neogeneralista.pt</a>.</p>
     </div>
     <div style="padding:16px 32px;background:#f9f9f9;border-top:1px solid #e5e5e5;font-size:12px;color:#aaa">
