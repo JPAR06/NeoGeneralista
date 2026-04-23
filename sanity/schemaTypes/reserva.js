@@ -19,6 +19,8 @@ export default {
         ],
       },
     },
+    { name: 'checkedIn', title: 'Check-in feito', type: 'boolean', initialValue: false },
+    { name: 'checkedInAt', title: 'Data/Hora do check-in', type: 'datetime', readOnly: true },
   ],
   preview: {
     select: {
