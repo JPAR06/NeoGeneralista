@@ -162,16 +162,23 @@ export default function EventoDetalhe({ evento }) {
                     <div>
                       <p className="ev-meta-label">Convidado/a</p>
                       <p className="ev-meta-value">
-                        {evento.convidadoInstagram ? (
-                          <a
-                            href={evento.convidadoInstagram.startsWith('http') ? evento.convidadoInstagram : `https://instagram.com/${evento.convidadoInstagram.replace('@','')}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="ev-speaker-name-link"
-                          >
-                            {evento.convidado}
-                          </a>
-                        ) : evento.convidado}
+                        {(() => {
+                          const speakerLink = evento.convidadoInstagram
+                            ? (evento.convidadoInstagram.startsWith('http')
+                                ? evento.convidadoInstagram
+                                : `https://instagram.com/${evento.convidadoInstagram.replace('@','')}`)
+                            : evento.convidadoLinkedIn || null;
+                          return speakerLink ? (
+                            <a
+                              href={speakerLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="ev-speaker-name-link"
+                            >
+                              {evento.convidado}
+                            </a>
+                          ) : evento.convidado;
+                        })()}
                       </p>
                       <div className="ev-speaker-socials">
                         {evento.convidadoLinkedIn && (

@@ -1,9 +1,10 @@
+import Link from "next/link";
 import { client } from "../../../../lib/sanity";
+import { requireAdmin } from "../../../../lib/admin";
 
 export async function getServerSideProps(ctx) {
-  if (ctx.query.secret !== process.env.CRON_SECRET) {
-    return { notFound: true };
-  }
+  const guard = await requireAdmin(ctx);
+  if (!guard.session) return guard;
 
   const { eventoId } = ctx.params;
   const evento = await client.fetch(
@@ -22,20 +23,34 @@ export async function getServerSideProps(ctx) {
     ctx.req.headers["x-forwarded-proto"] ||
     (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
   const base = process.env.SITE_URL || `${proto}://${host}`;
-  const qrUrl = `/api/qr/${eventoId}?secret=${encodeURIComponent(ctx.query.secret)}`;
   const checkinUrl = `${base.replace(/\/$/, "")}/checkin/${eventoId}`;
+  const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || "";
 
   return {
     props: {
       evento,
       reservas,
-      qrUrl,
+      qrUrl: `/api/qr/${eventoId}?size=400`,
+      qrFullUrl: `/api/qr/${eventoId}?size=1400`,
+      printUrl: `/admin/evento/${eventoId}/qr`,
+      exportUrl: `/api/exportar-reservas?eventoId=${eventoId}`,
+      studioUrl: `/studio/structure/eventoProximo;${eventoId}`,
       checkinUrl,
+      projectId,
     },
   };
 }
 
-export default function Presencas({ evento, reservas, qrUrl, checkinUrl }) {
+export default function Presencas({
+  evento,
+  reservas,
+  qrUrl,
+  qrFullUrl,
+  printUrl,
+  exportUrl,
+  studioUrl,
+  checkinUrl,
+}) {
   const total = reservas.length;
   const presentes = reservas.filter((r) => r.checkedIn).length;
   const taxa = total ? Math.round((presentes / total) * 100) : 0;
@@ -43,6 +58,10 @@ export default function Presencas({ evento, reservas, qrUrl, checkinUrl }) {
   return (
     <div style={s.page}>
       <div style={s.container}>
+        <nav style={s.nav}>
+          <Link href="/admin" style={s.navLink}>← Todos os eventos</Link>
+        </nav>
+
         <header style={s.header}>
           <p style={s.eyebrow}>{evento.edicao}</p>
           <h1 style={s.h1}>{evento.tema || "Presenças"}</h1>
@@ -57,15 +76,23 @@ export default function Presencas({ evento, reservas, qrUrl, checkinUrl }) {
           <Stat label="Taxa" value={`${taxa}%`} />
         </section>
 
+        <section style={s.actions}>
+          <a href={printUrl} target="_blank" rel="noreferrer" style={{ ...s.btn, ...s.btnPrimary }}>
+            🖨️ Abrir QR para imprimir
+          </a>
+          <a href={exportUrl} style={s.btn}>⬇️ Exportar CSV</a>
+          <a href={studioUrl} target="_blank" rel="noreferrer" style={s.btn}>🛠️ Abrir no Sanity Studio</a>
+        </section>
+
         <section style={s.qrBox}>
           <h2 style={s.h2}>QR de check-in</h2>
-          <p style={s.muted}>Mostra/imprime este QR à entrada. Liga para:</p>
+          <p style={s.muted}>URL que o QR liga a:</p>
           <code style={s.code}>{checkinUrl}</code>
-          <div style={{ marginTop: 12 }}>
+          <div style={{ marginTop: 16 }}>
             <img src={qrUrl} alt="QR code de check-in" style={s.qrImg} />
           </div>
           <p style={s.muted}>
-            <a href={qrUrl} target="_blank" rel="noreferrer">Abrir em tamanho grande</a> (clica direito → guardar como)
+            <a href={qrFullUrl} target="_blank" rel="noreferrer">Ver em alta resolução</a>
           </p>
         </section>
 
@@ -117,18 +144,23 @@ function Stat({ label, value }) {
 const s = {
   page: { minHeight: "100dvh", background: "#f4f4f4", fontFamily: "Arial, sans-serif", color: "#1a1a1a", padding: "32px 16px" },
   container: { maxWidth: 900, margin: "0 auto" },
+  nav: { marginBottom: 16 },
+  navLink: { color: "#666", textDecoration: "none", fontSize: 14 },
   header: { marginBottom: 24 },
   eyebrow: { textTransform: "uppercase", fontSize: 12, letterSpacing: 1, color: "#888", margin: 0 },
   h1: { fontSize: 28, margin: "6px 0 8px" },
   h2: { fontSize: 18, margin: "0 0 12px" },
   muted: { color: "#777", fontSize: 14, margin: "4px 0" },
-  stats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, margin: "24px 0" },
+  stats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, margin: "16px 0" },
   stat: { background: "#fff", borderRadius: 8, padding: 16, textAlign: "center" },
   statValue: { fontSize: 32, fontWeight: 700 },
   statLabel: { fontSize: 12, color: "#888", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
+  actions: { display: "flex", flexWrap: "wrap", gap: 8, margin: "0 0 24px" },
+  btn: { display: "inline-block", padding: "10px 14px", background: "#fff", border: "1px solid #e5e5e5", borderRadius: 6, textDecoration: "none", color: "#1a1a1a", fontSize: 14 },
+  btnPrimary: { background: "#1a1a1a", color: "#fff", borderColor: "#1a1a1a" },
   qrBox: { background: "#fff", borderRadius: 8, padding: 20, marginBottom: 24, textAlign: "center" },
-  code: { display: "inline-block", background: "#f0f0f0", padding: "4px 8px", borderRadius: 4, fontSize: 12 },
-  qrImg: { maxWidth: 280, width: "100%", height: "auto", border: "1px solid #eee", borderRadius: 4 },
+  code: { display: "inline-block", background: "#f0f0f0", padding: "4px 8px", borderRadius: 4, fontSize: 12, wordBreak: "break-all" },
+  qrImg: { maxWidth: 240, width: "100%", height: "auto", border: "1px solid #eee", borderRadius: 4 },
   table: { width: "100%", background: "#fff", borderCollapse: "collapse", borderRadius: 8, overflow: "hidden" },
   th: { textAlign: "left", padding: "10px 12px", borderBottom: "1px solid #eee", fontSize: 13, color: "#666", background: "#fafafa" },
   td: { padding: "10px 12px", borderBottom: "1px solid #f5f5f5", fontSize: 14 },

@@ -1,13 +1,22 @@
 import { client } from "../../lib/sanity";
 import clientPromise from "../../lib/mongodb";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./auth/[...nextauth]";
+import { isAdminEmail } from "../../lib/admin";
 
-// Protected export — access via:
-// /api/exportar-reservas?secret=YOUR_CRON_SECRET
-// /api/exportar-reservas?secret=YOUR_CRON_SECRET&eventoId=xxx  (filter by event)
-// /api/exportar-reservas?secret=YOUR_CRON_SECRET&estado=confirmado
+// Protected export — either a logged-in admin (ADMIN_EMAILS) OR ?secret=CRON_SECRET.
+//   /api/exportar-reservas                 (admin session)
+//   /api/exportar-reservas?eventoId=xxx    (filter by event)
+//   /api/exportar-reservas?secret=YOUR_CRON_SECRET   (scripted / cron)
 
 export default async function handler(req, res) {
-  if (req.query.secret !== process.env.CRON_SECRET) {
+  const bySecret = req.query.secret && req.query.secret === process.env.CRON_SECRET;
+  let bySession = false;
+  if (!bySecret) {
+    const session = await getServerSession(req, res, authOptions);
+    bySession = !!session && isAdminEmail(session.user?.email);
+  }
+  if (!bySecret && !bySession) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 

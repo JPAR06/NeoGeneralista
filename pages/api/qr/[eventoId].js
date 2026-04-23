@@ -1,14 +1,13 @@
 import QRCode from "qrcode";
+import { requireAdminApi } from "../../../lib/admin";
 
 // Returns a high-res PNG QR code for the self check-in URL of a given event.
-// Protected by ?secret=CRON_SECRET — open it in the browser, save/print.
-//
-// Example: /api/qr/abcd1234?secret=XXX  (add &size=1000 for custom px)
+// Protected by NextAuth session + ADMIN_EMAILS whitelist.
+// Example: /api/qr/abcd1234  (add ?size=1000 for custom px)
 
 export default async function handler(req, res) {
-  if (req.query.secret !== process.env.CRON_SECRET) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  const session = await requireAdminApi(req, res);
+  if (!session) return;
 
   const { eventoId, size } = req.query;
   if (!eventoId) return res.status(400).json({ error: "eventoId obrigatório" });

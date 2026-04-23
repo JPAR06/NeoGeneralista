@@ -1950,6 +1950,17 @@ img {
   margin: 0;
 }
 
+.ev-speaker-name-link {
+  color: #F05A78;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(240, 90, 120, 0.35);
+  transition: color 0.2s, border-color 0.2s;
+}
+.ev-speaker-name-link:hover {
+  color: #ff7a94;
+  border-bottom-color: rgba(240, 90, 120, 0.9);
+}
+
 .ev-speaker-socials {
   display: flex;
   gap: 10px;
