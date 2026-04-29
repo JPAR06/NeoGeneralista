@@ -39,7 +39,16 @@ export const authOptions = {
         const db = client.db();
         const user = await db.collection("users").findOne({ email: normalizedEmail });
 
-        if (!user || !user.passwordHash) return null;
+        // Ghost account (imported via bulk script, never registered) — give a
+        // dedicated error so the login page can prompt the user to register.
+        if (user && !user.passwordHash) {
+          // Existing OAuth-only account (linked Google but no credentials yet).
+          const linked = await db.collection("accounts").findOne({ userId: user._id }, { projection: { _id: 1 } });
+          if (linked) throw new Error("USE_GOOGLE");
+          throw new Error("ACCOUNT_NEEDS_REGISTRATION");
+        }
+
+        if (!user) return null;
 
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!valid) return null;

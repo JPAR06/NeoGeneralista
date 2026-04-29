@@ -2,6 +2,7 @@ import { useState } from "react";
 import { signIn, getSession } from "next-auth/react";
 import Link from "next/link";
 import ConstellationCanvasAH from "../../components/ConstellationCanvasAH";
+import PasswordInput from "../../components/PasswordInput";
 
 export default function Registar() {
   const [form, setForm] = useState({
@@ -112,26 +113,21 @@ export default function Registar() {
           </label>
           <label className="ahv4-auth-label">
             Palavra-passe
-            <input
-              type="password"
-              className="ahv4-auth-input"
+            <PasswordInput
               value={form.password}
               onChange={set("password")}
               placeholder="Mínimo 8 caracteres"
-              required
               autoComplete="new-password"
             />
           </label>
           <label className="ahv4-auth-label">
             Confirmar palavra-passe
-            <input
-              type="password"
-              className="ahv4-auth-input"
+            <PasswordInput
               value={form.confirm}
               onChange={set("confirm")}
               placeholder="Repete a palavra-passe"
-              required
               autoComplete="new-password"
+              ariaLabel="Confirmação da palavra-passe"
             />
           </label>
 

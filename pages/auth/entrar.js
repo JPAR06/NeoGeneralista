@@ -2,16 +2,17 @@ import { useState } from "react";
 import { signIn, getSession } from "next-auth/react";
 import Link from "next/link";
 import ConstellationCanvasAH from "../../components/ConstellationCanvasAH";
+import PasswordInput from "../../components/PasswordInput";
 
 export default function Entrar() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null); // { msg, link?: { href, label } }
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setError(null);
     setLoading(true);
     const res = await signIn("credentials", {
       email,
@@ -20,7 +21,20 @@ export default function Entrar() {
     });
     setLoading(false);
     if (res?.error) {
-      setError("E-mail ou palavra-passe incorretos.");
+      // NextAuth surfaces our authorize() Error("CODE") strings here.
+      if (res.error === "ACCOUNT_NEEDS_REGISTRATION") {
+        setError({
+          msg: "Esta conta foi importada mas ainda não tem palavra-passe.",
+          link: { href: "/auth/registar", label: "Concluir o registo" },
+        });
+      } else if (res.error === "USE_GOOGLE") {
+        setError({ msg: "Esta conta foi criada com Google. Usa o botão acima." });
+      } else {
+        setError({
+          msg: "E-mail ou palavra-passe incorretos.",
+          link: { href: "/auth/recuperar", label: "Esqueci-me da palavra-passe" },
+        });
+      }
     } else {
       window.location.href = "/algoritmo-humano";
     }
@@ -64,22 +78,32 @@ export default function Entrar() {
           </label>
           <label className="ahv4-auth-label">
             Palavra-passe
-            <input
-              type="password"
-              className="ahv4-auth-input"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              required
               autoComplete="current-password"
             />
           </label>
-          {error && <p className="ahv4-auth-error">{error}</p>}
+          {error && (
+            <p className="ahv4-auth-error">
+              {error.msg}
+              {error.link && (
+                <>
+                  {" "}
+                  <Link href={error.link.href} className="ahv4-auth-link">{error.link.label}.</Link>
+                </>
+              )}
+            </p>
+          )}
           <button type="submit" className="ahv4-auth-submit" disabled={loading}>
             {loading ? "A entrar…" : "Entrar"}
           </button>
         </form>
 
+        <p className="ahv4-auth-switch">
+          <Link href="/auth/recuperar" className="ahv4-auth-link">Esqueci-me da palavra-passe</Link>
+        </p>
         <p className="ahv4-auth-switch">
           Ainda não tens conta?{" "}
           <Link href="/auth/registar" className="ahv4-auth-link">Cria aqui.</Link>
