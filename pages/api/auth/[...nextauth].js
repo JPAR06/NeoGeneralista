@@ -34,9 +34,10 @@ export const authOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        const normalizedEmail = credentials.email.toLowerCase().trim();
         const client = await clientPromise;
         const db = client.db();
-        const user = await db.collection("users").findOne({ email: credentials.email.toLowerCase() });
+        const user = await db.collection("users").findOne({ email: normalizedEmail });
 
         if (!user || !user.passwordHash) return null;
 

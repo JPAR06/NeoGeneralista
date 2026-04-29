@@ -38,23 +38,54 @@ export default async function handler(req, res) {
     // Ensure unique index on email (runs once, no-op after)
     await db.collection("users").createIndex({ email: 1 }, { unique: true });
 
+    const trimmedName = name.trim();
     const existing = await db.collection("users").findOne({ email: normalizedEmail });
-    if (existing) {
-      return res.status(409).json({ error: "Já existe uma conta com este e-mail." });
-    }
-
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const trimmedName = name.trim();
+    if (existing) {
+      const linkedAccount = await db.collection("accounts").findOne(
+        { userId: existing._id },
+        { projection: { _id: 1 } }
+      );
 
-    await db.collection("users").insertOne({
-      name: trimmedName,
-      email: normalizedEmail,
-      passwordHash,
-      consentimentoEventosFuturos: true,
-      consentimentoDadosInvestigacao: true,
-      createdAt: new Date(),
-    });
+      if (existing.passwordHash || linkedAccount) {
+        return res.status(409).json({ error: "Já existe uma conta com este e-mail." });
+      }
+
+      const result = await db.collection("users").updateOne(
+        {
+          _id: existing._id,
+          $or: [
+            { passwordHash: { $exists: false } },
+            { passwordHash: null },
+            { passwordHash: "" },
+          ],
+        },
+        {
+          $set: {
+            name: trimmedName,
+            passwordHash,
+            consentimentoEventosFuturos: true,
+            consentimentoDadosInvestigacao: true,
+            updatedAt: new Date(),
+            credentialsActivatedAt: new Date(),
+          },
+        }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(409).json({ error: "Já existe uma conta com este e-mail." });
+      }
+    } else {
+      await db.collection("users").insertOne({
+        name: trimmedName,
+        email: normalizedEmail,
+        passwordHash,
+        consentimentoEventosFuturos: true,
+        consentimentoDadosInvestigacao: true,
+        createdAt: new Date(),
+      });
+    }
 
     // Create Sanity community member if not already there (non-blocking)
     client.fetch(`count(*[_type == "membroComunidade" && email == $email])`, { email: normalizedEmail })
