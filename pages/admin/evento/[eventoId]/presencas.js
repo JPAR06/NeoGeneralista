@@ -33,7 +33,8 @@ export async function getServerSideProps(ctx) {
       qrUrl: `/api/qr/${eventoId}?size=400`,
       qrFullUrl: `/api/qr/${eventoId}?size=1400`,
       printUrl: `/admin/evento/${eventoId}/qr`,
-      exportUrl: `/api/exportar-reservas?eventoId=${eventoId}`,
+      inscritosExportUrl: `/api/exportar-reservas?eventoId=${eventoId}&tipo=inscritos`,
+      participantesExportUrl: `/api/exportar-reservas?eventoId=${eventoId}&tipo=participantes`,
       studioUrl: `/studio/structure/eventoProximo;${eventoId}`,
       checkinUrl,
       projectId,
@@ -47,7 +48,8 @@ export default function Presencas({
   qrUrl,
   qrFullUrl,
   printUrl,
-  exportUrl,
+  inscritosExportUrl,
+  participantesExportUrl,
   studioUrl,
   checkinUrl,
 }) {
@@ -80,7 +82,8 @@ export default function Presencas({
           <a href={printUrl} target="_blank" rel="noreferrer" style={{ ...s.btn, ...s.btnPrimary }}>
             🖨️ Abrir QR para imprimir
           </a>
-          <a href={exportUrl} style={s.btn}>⬇️ Exportar CSV</a>
+          <a href={inscritosExportUrl} style={s.btn}>⬇️ Exportar inscritos</a>
+          <a href={participantesExportUrl} style={s.btn}>⬇️ Exportar participantes</a>
           <a href={studioUrl} target="_blank" rel="noreferrer" style={s.btn}>🛠️ Abrir no Sanity Studio</a>
         </section>
 

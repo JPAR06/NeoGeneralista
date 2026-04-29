@@ -37,6 +37,7 @@ export default function AdminDashboard({ eventos, user }) {
           </div>
           <div style={s.userBox}>
             <span style={s.muted}>Sessão: {user.email}</span>
+            <a href="/api/exportar-utilizadores" style={s.exportUsers}>Exportar site/newsletter</a>
           </div>
         </header>
 
@@ -106,7 +107,8 @@ const s = {
   h1: { fontSize: 32, margin: "6px 0 0" },
   h2: { fontSize: 18, margin: "0 0 16px" },
   muted: { color: "#888", fontSize: 13 },
-  userBox: { textAlign: "right" },
+  userBox: { textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 },
+  exportUsers: { display: "inline-block", padding: "9px 12px", background: "#fff", border: "1px solid #e5e5e5", borderRadius: 6, textDecoration: "none", color: "#1a1a1a", fontSize: 13 },
   section: { marginBottom: 40 },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 },
   card: {

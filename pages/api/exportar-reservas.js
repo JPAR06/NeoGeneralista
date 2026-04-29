@@ -21,6 +21,7 @@ export default async function handler(req, res) {
   }
 
   const { eventoId, estado } = req.query;
+  const tipo = req.query.tipo === "participantes" ? "participantes" : req.query.tipo === "inscritos" ? "inscritos" : "";
 
   let query = `*[_type == "reserva"`;
   const params = {};
@@ -29,12 +30,16 @@ export default async function handler(req, res) {
     query += ` && eventoId == $eventoId`;
     params.eventoId = eventoId;
   }
-  if (estado) {
+  if (tipo === "inscritos") {
+    query += ` && estado == "confirmado"`;
+  } else if (tipo === "participantes") {
+    query += ` && estado == "confirmado" && checkedIn == true`;
+  } else if (estado) {
     query += ` && estado == $estado`;
     params.estado = estado;
   }
 
-  query += `] | order(_createdAt asc) { nome, email, estado, eventoId, _createdAt }`;
+  query += `] | order(_createdAt asc) { nome, email, estado, eventoId, checkedIn, checkedInAt, _createdAt }`;
 
   const reservas = await client.fetch(query, params);
 
@@ -51,7 +56,7 @@ export default async function handler(req, res) {
   const profileMap = new Map(users.map((u) => [u.email, u]));
 
   const rows = [
-    ["Nome", "Email", "Estado", "EventoId", "Data de inscrição", "Situação Profissional", "Faixa Etária", "Habilitações", "Setor Profissional"],
+    ["Nome", "Email", "Estado", "EventoId", "Data de inscrição", "Presente", "Hora check-in", "Situação Profissional", "Faixa Etária", "Habilitações", "Setor Profissional"],
     ...reservas.map((r) => {
       const p = profileMap.get(r.email) ?? {};
       return [
@@ -60,6 +65,8 @@ export default async function handler(req, res) {
         r.estado ?? "",
         r.eventoId ?? "",
         r._createdAt ? new Date(r._createdAt).toLocaleString("pt-PT") : "",
+        r.checkedIn ? "Sim" : "Não",
+        r.checkedInAt ? new Date(r.checkedInAt).toLocaleString("pt-PT") : "",
         p.situacaoProfissional ?? "",
         p.faixaEtaria ?? "",
         p.habilitacoes ?? "",
@@ -71,6 +78,7 @@ export default async function handler(req, res) {
   const csv = rows.map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
 
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename="reservas.csv"`);
+  const suffix = tipo || (estado ? estado : "reservas");
+  res.setHeader("Content-Disposition", `attachment; filename="${suffix}${eventoId ? `-${eventoId}` : ""}.csv"`);
   res.status(200).send("\uFEFF" + csv); // BOM for Excel compatibility
 }
