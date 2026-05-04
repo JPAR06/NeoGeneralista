@@ -32,8 +32,11 @@ export default async function handler(req, res) {
   const normalizedEmail = email.toLowerCase().trim();
 
   try {
-    const client = await clientPromise;
-    const db = client.db();
+    // Note: we use `mongo` here because the imported `client` is the Sanity
+    // client (used further down). Naming the MongoDB client `client` would
+    // shadow it and cause a silent TypeError on the Sanity call → 500.
+    const mongo = await clientPromise;
+    const db = mongo.db();
 
     // Ensure unique index on email (runs once, no-op after)
     await db.collection("users").createIndex({ email: 1 }, { unique: true });
@@ -107,7 +110,8 @@ export default async function handler(req, res) {
       .catch((err) => console.error("[sender] subscriber add failed:", err));
 
     return res.status(201).json({ ok: true });
-  } catch {
+  } catch (err) {
+    console.error("[signup] failed:", err);
     return res.status(500).json({ error: "Erro interno. Tenta novamente." });
   }
 }
