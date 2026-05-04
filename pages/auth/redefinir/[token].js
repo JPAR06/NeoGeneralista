@@ -7,10 +7,12 @@ import { peekPasswordResetToken } from "../../../lib/auth-tokens"
 
 export async function getServerSideProps(ctx) {
   const { token } = ctx.params
+  const mode = ctx.query.mode === "activate" ? "activate" : "reset"
   const status = await peekPasswordResetToken(token)
   return {
     props: {
       token,
+      mode,
       tokenValid: status.valid,
       tokenReason: status.valid ? null : status.reason,
       email: status.email || null,
@@ -18,7 +20,8 @@ export async function getServerSideProps(ctx) {
   }
 }
 
-export default function Redefinir({ token, tokenValid, tokenReason, email }) {
+export default function Redefinir({ token, mode, tokenValid, tokenReason, email }) {
+  const isActivate = mode === "activate"
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
   const [error, setError] = useState("")
@@ -84,9 +87,9 @@ export default function Redefinir({ token, tokenValid, tokenReason, email }) {
         <ConstellationCanvasAH />
         <div className="ahv4-auth-card">
           <img src="/algoritmo-humano-logo-cor.png" alt="AlgoritmoHumano" className="ahv4-auth-logo" />
-          <h1 className="ahv4-auth-title">Palavra-passe redefinida</h1>
+          <h1 className="ahv4-auth-title">{isActivate ? "Conta ativada" : "Palavra-passe redefinida"}</h1>
           <p style={{ color: "rgba(255,255,255,0.85)", lineHeight: 1.5 }}>
-            Já podes entrar com a nova palavra-passe.
+            Já podes entrar com a {isActivate ? "tua nova" : "nova"} palavra-passe.
           </p>
           <p className="ahv4-auth-switch">
             <Link href="/auth/entrar" className="ahv4-auth-link">Ir para o login</Link>
@@ -101,16 +104,21 @@ export default function Redefinir({ token, tokenValid, tokenReason, email }) {
       <ConstellationCanvasAH />
       <div className="ahv4-auth-card">
         <img src="/algoritmo-humano-logo-cor.png" alt="AlgoritmoHumano" className="ahv4-auth-logo" />
-        <h1 className="ahv4-auth-title">Nova palavra-passe</h1>
+        <h1 className="ahv4-auth-title">{isActivate ? "Definir palavra-passe" : "Nova palavra-passe"}</h1>
 
         <form className="ahv4-auth-form" onSubmit={handleSubmit}>
+          {isActivate && (
+            <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.5, margin: 0 }}>
+              A tua conta já existe. Escolhe uma palavra-passe para começares a usá-la.
+            </p>
+          )}
           {email && (
             <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
               Conta: <strong style={{ color: "rgba(255,255,255,0.9)" }}>{email}</strong>
             </p>
           )}
           <label className="ahv4-auth-label">
-            Nova palavra-passe
+            {isActivate ? "Palavra-passe" : "Nova palavra-passe"}
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -119,7 +127,7 @@ export default function Redefinir({ token, tokenValid, tokenReason, email }) {
             />
           </label>
           <label className="ahv4-auth-label">
-            Confirmar nova palavra-passe
+            {isActivate ? "Confirmar palavra-passe" : "Confirmar nova palavra-passe"}
             <PasswordInput
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
@@ -130,7 +138,7 @@ export default function Redefinir({ token, tokenValid, tokenReason, email }) {
           </label>
           {error && <p className="ahv4-auth-error">{error}</p>}
           <button type="submit" className="ahv4-auth-submit" disabled={loading}>
-            {loading ? "A guardar…" : "Definir palavra-passe"}
+            {loading ? "A guardar…" : (isActivate ? "Ativar conta" : "Definir palavra-passe")}
           </button>
         </form>
       </div>

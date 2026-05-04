@@ -24,8 +24,8 @@ export default function Entrar() {
       // NextAuth surfaces our authorize() Error("CODE") strings here.
       if (res.error === "ACCOUNT_NEEDS_REGISTRATION") {
         setError({
-          msg: "Esta conta foi importada mas ainda não tem palavra-passe.",
-          link: { href: "/auth/registar", label: "Concluir o registo" },
+          msg: "Esta conta foi importada mas ainda não tem palavra-passe. Pede um link de ativação por email:",
+          link: { href: "/auth/recuperar", label: "Receber link" },
         });
       } else if (res.error === "USE_GOOGLE") {
         setError({ msg: "Esta conta foi criada com Google. Usa o botão acima." });

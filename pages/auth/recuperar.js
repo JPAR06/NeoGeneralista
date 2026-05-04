@@ -46,7 +46,8 @@ export default function Recuperar() {
         ) : (
           <form className="ahv4-auth-form" onSubmit={handleSubmit}>
             <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, lineHeight: 1.5, margin: "0 0 8px" }}>
-              Indica o e-mail da tua conta. Vamos enviar-te um link para redefinires a palavra-passe.
+              Indica o e-mail da tua conta. Vamos enviar-te um link para definires/redefinires a palavra-passe.
+              Também funciona para contas importadas que ainda não têm palavra-passe.
             </p>
             <label className="ahv4-auth-label">
               E-mail
