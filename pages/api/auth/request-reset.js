@@ -15,25 +15,17 @@ export default async function handler(req, res) {
 
   const normalizedEmail = email.toLowerCase().trim()
 
-  // Always respond 200 — don't leak whether the email exists.
-  // We still do the work async so the user gets the email if applicable.
-  ;(async () => {
-    try {
-      const client = await clientPromise
-      const db = client.db()
-      const user = await db.collection("users").findOne({ email: normalizedEmail })
-      if (!user) return // silent no-op
+  // Do the work inline (not in a background IIFE) — Vercel terminates the
+  // serverless function as soon as the response is sent, so any deferred
+  // work would never run. Wrap in try/catch so any error still returns 200,
+  // preserving the "no enumeration" property (caller can't distinguish
+  // existing from non-existing emails).
+  try {
+    const mongo = await clientPromise
+    const db = mongo.db()
+    const user = await db.collection("users").findOne({ email: normalizedEmail })
 
-      // For OAuth-only accounts (no passwordHash), don't send a reset link —
-      // they have no credentials to reset. Telling them to use Google would
-      // leak account existence; staying silent is the safer policy.
-      if (!user.passwordHash) {
-        const linked = await db.collection("accounts").findOne({ userId: user._id }, { projection: { _id: 1 } })
-        if (linked) return
-        // Imported ghost account: also skip — they should go through registration.
-        return
-      }
-
+    if (user && user.passwordHash) {
       const { token, expiresAt } = await createPasswordResetToken(normalizedEmail)
 
       const host = req.headers.host || ""
@@ -50,10 +42,13 @@ export default async function handler(req, res) {
         html: buildResetEmail({ name: user.name, link, expiresAt }),
         text: buildResetText({ name: user.name, link, expiresAt }),
       })
-    } catch (err) {
-      console.error("[request-reset] background failure:", err)
     }
-  })()
+    // For accounts without passwordHash (Google-only or imported ghost) we
+    // intentionally do nothing — staying silent avoids leaking which
+    // accounts exist. Those users should go via /auth/registar instead.
+  } catch (err) {
+    console.error("[request-reset] failed for", normalizedEmail, ":", err)
+  }
 
   return res.status(200).json({ ok: true })
 }
