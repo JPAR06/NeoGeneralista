@@ -1,8 +1,14 @@
 import { useState } from "react"
+import { useRouter } from "next/router"
 import Link from "next/link"
 import ConstellationCanvasAH from "../../components/ConstellationCanvasAH"
+import { safeCallback } from "../../lib/callback"
 
 export default function Recuperar() {
+  const router = useRouter()
+  const callbackUrl = safeCallback(router.query.callbackUrl)
+  const loginHref = `/auth/entrar?callbackUrl=${encodeURIComponent(callbackUrl)}`
+
   const [email, setEmail] = useState("")
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -14,7 +20,7 @@ export default function Recuperar() {
       await fetch("/api/auth/request-reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, callbackUrl }),
       })
     } catch {
       // Always show the same confirmation regardless of network errors —
@@ -40,7 +46,7 @@ export default function Recuperar() {
               Verifica também a pasta de spam. O link é válido por 1 hora.
             </p>
             <p className="ahv4-auth-switch">
-              <Link href="/auth/entrar" className="ahv4-auth-link">Voltar ao login</Link>
+              <Link href={loginHref} className="ahv4-auth-link">Voltar ao login</Link>
             </p>
           </>
         ) : (
@@ -66,7 +72,7 @@ export default function Recuperar() {
               {loading ? "A enviar…" : "Enviar link de recuperação"}
             </button>
             <p className="ahv4-auth-switch">
-              <Link href="/auth/entrar" className="ahv4-auth-link">Voltar ao login</Link>
+              <Link href={loginHref} className="ahv4-auth-link">Voltar ao login</Link>
             </p>
           </form>
         )}

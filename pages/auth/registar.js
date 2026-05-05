@@ -1,10 +1,16 @@
 import { useState } from "react";
+import { useRouter } from "next/router";
 import { signIn, getSession } from "next-auth/react";
 import Link from "next/link";
 import ConstellationCanvasAH from "../../components/ConstellationCanvasAH";
 import PasswordInput from "../../components/PasswordInput";
+import { safeCallback } from "../../lib/callback";
 
 export default function Registar() {
+  const router = useRouter();
+  const callbackUrl = safeCallback(router.query.callbackUrl);
+  const loginHref = `/auth/entrar?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -64,7 +70,7 @@ export default function Registar() {
     if (signInRes?.error) {
       return setError("Conta criada. Faz login para entrar.");
     }
-    window.location.href = "/algoritmo-humano";
+    window.location.href = callbackUrl;
   };
 
   return (
@@ -74,7 +80,7 @@ export default function Registar() {
         <img src="/algoritmo-humano-logo-cor.png" alt="AlgoritmoHumano" className="ahv4-auth-logo" />
         <h1 className="ahv4-auth-title">Criar conta</h1>
 
-        <button className="ahv4-auth-google-btn" onClick={() => signIn("google", { callbackUrl: "/auth/completar" })} type="button">
+        <button className="ahv4-auth-google-btn" onClick={() => signIn("google", { callbackUrl: `/auth/completar?callbackUrl=${encodeURIComponent(callbackUrl)}` })} type="button">
           <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
             <path d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.2 0 6.1 1.2 8.4 3.1l6-6C34.6 5.1 29.6 3 24 3 12.9 3 4 11.9 4 23s8.9 20 20 20c11 0 20-8 20-20 0-1.3-.2-2.7-.5-4z" fill="#FFC107"/>
             <path d="M6.3 14.7l7 5.1C15.1 16.4 19.2 13.5 24 13.5c3.2 0 6.1 1.2 8.4 3.1l6-6C34.6 5.1 29.6 3 24 3 16.3 3 9.7 7.9 6.3 14.7z" fill="#FF3D00"/>
@@ -168,7 +174,7 @@ export default function Registar() {
 
         <p className="ahv4-auth-switch">
           Já tens conta?{" "}
-          <Link href="/auth/entrar" className="ahv4-auth-link">Entra aqui.</Link>
+          <Link href={loginHref} className="ahv4-auth-link">Entra aqui.</Link>
         </p>
       </div>
     </div>
@@ -178,7 +184,10 @@ export default function Registar() {
 export async function getServerSideProps(context) {
   const session = await getSession(context);
   if (session) {
-    return { redirect: { destination: "/algoritmo-humano", permanent: false } };
+    const dest = (typeof context.query.callbackUrl === "string" && context.query.callbackUrl.startsWith("/") && !context.query.callbackUrl.startsWith("//"))
+      ? context.query.callbackUrl
+      : "/algoritmo-humano";
+    return { redirect: { destination: dest, permanent: false } };
   }
   return { props: {} };
 }

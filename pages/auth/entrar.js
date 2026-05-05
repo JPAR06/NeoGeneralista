@@ -1,10 +1,17 @@
 import { useState } from "react";
+import { useRouter } from "next/router";
 import { signIn, getSession } from "next-auth/react";
 import Link from "next/link";
 import ConstellationCanvasAH from "../../components/ConstellationCanvasAH";
 import PasswordInput from "../../components/PasswordInput";
+import { safeCallback } from "../../lib/callback";
 
 export default function Entrar() {
+  const router = useRouter();
+  const callbackUrl = safeCallback(router.query.callbackUrl);
+  const recoverHref = `/auth/recuperar?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+  const registerHref = `/auth/registar?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null); // { msg, link?: { href, label } }
@@ -25,23 +32,24 @@ export default function Entrar() {
       if (res.error === "ACCOUNT_NEEDS_REGISTRATION") {
         setError({
           msg: "Esta conta foi importada mas ainda não tem palavra-passe. Pede um link de ativação por email:",
-          link: { href: "/auth/recuperar", label: "Receber link" },
+          link: { href: recoverHref, label: "Receber link" },
         });
       } else if (res.error === "USE_GOOGLE") {
         setError({ msg: "Esta conta foi criada com Google. Usa o botão acima." });
       } else {
         setError({
           msg: "E-mail ou palavra-passe incorretos.",
-          link: { href: "/auth/recuperar", label: "Esqueci-me da palavra-passe" },
+          link: { href: recoverHref, label: "Esqueci-me da palavra-passe" },
         });
       }
     } else {
-      window.location.href = "/algoritmo-humano";
+      window.location.href = callbackUrl;
     }
   };
 
   const handleGoogle = () => {
-    signIn("google", { callbackUrl: "/auth/completar" });
+    // Google needs the completar step on first login; afterwards goes to callback.
+    signIn("google", { callbackUrl: `/auth/completar?callbackUrl=${encodeURIComponent(callbackUrl)}` });
   };
 
   return (
@@ -102,11 +110,11 @@ export default function Entrar() {
         </form>
 
         <p className="ahv4-auth-switch">
-          <Link href="/auth/recuperar" className="ahv4-auth-link">Esqueci-me da palavra-passe</Link>
+          <Link href={recoverHref} className="ahv4-auth-link">Esqueci-me da palavra-passe</Link>
         </p>
         <p className="ahv4-auth-switch">
           Ainda não tens conta?{" "}
-          <Link href="/auth/registar" className="ahv4-auth-link">Cria aqui.</Link>
+          <Link href={registerHref} className="ahv4-auth-link">Cria aqui.</Link>
         </p>
       </div>
     </div>
@@ -116,7 +124,10 @@ export default function Entrar() {
 export async function getServerSideProps(context) {
   const session = await getSession(context);
   if (session) {
-    return { redirect: { destination: "/algoritmo-humano", permanent: false } };
+    const dest = (typeof context.query.callbackUrl === "string" && context.query.callbackUrl.startsWith("/") && !context.query.callbackUrl.startsWith("//"))
+      ? context.query.callbackUrl
+      : "/algoritmo-humano";
+    return { redirect: { destination: dest, permanent: false } };
   }
   return { props: {} };
 }

@@ -61,7 +61,11 @@ export default function CompletarPerfil() {
     setLoading(false);
 
     if (res.ok) {
-      router.push("/algoritmo-humano");
+      const cb = router.query.callbackUrl;
+      const dest = (typeof cb === "string" && cb.startsWith("/") && !cb.startsWith("//"))
+        ? cb
+        : "/algoritmo-humano";
+      router.push(dest);
     } else {
       setError("Erro ao guardar. Tenta novamente.");
     }
@@ -153,8 +157,13 @@ export default function CompletarPerfil() {
 export async function getServerSideProps(context) {
   const session = await getSession(context);
 
+  const cb = context.query.callbackUrl;
+  const safeDest = (typeof cb === "string" && cb.startsWith("/") && !cb.startsWith("//"))
+    ? cb
+    : "/algoritmo-humano";
+
   if (!session) {
-    return { redirect: { destination: "/auth/entrar", permanent: false } };
+    return { redirect: { destination: `/auth/entrar?callbackUrl=${encodeURIComponent(safeDest)}`, permanent: false } };
   }
 
   // Check if user already completed consents — if so skip this page
@@ -164,7 +173,7 @@ export async function getServerSideProps(context) {
     const db = client.db();
     const user = await db.collection("users").findOne({ email: session.user.email });
     if (user?.consentimentoEventosFuturos && user?.consentimentoDadosInvestigacao) {
-      return { redirect: { destination: "/algoritmo-humano", permanent: false } };
+      return { redirect: { destination: safeDest, permanent: false } };
     }
   } catch {
     // If DB check fails, still show the page

@@ -1,6 +1,7 @@
 import clientPromise from "../../../lib/mongodb"
 import { createPasswordResetToken } from "../../../lib/auth-tokens"
 import { sendEmail } from "../../../lib/email"
+import { safeCallback } from "../../../lib/callback"
 
 // Returns the same response whether the email exists or not, to prevent
 // account enumeration. Sends:
@@ -11,12 +12,13 @@ import { sendEmail } from "../../../lib/email"
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end()
 
-  const { email } = req.body || {}
+  const { email, callbackUrl: rawCallback } = req.body || {}
   if (!email || typeof email !== "string") {
     return res.status(400).json({ error: "Email obrigatório." })
   }
 
   const normalizedEmail = email.toLowerCase().trim()
+  const callbackUrl = safeCallback(rawCallback, "")
 
   // Do the work inline (not in a background IIFE) — Vercel terminates the
   // serverless function as soon as the response is sent, so any deferred
@@ -46,7 +48,8 @@ export default async function handler(req, res) {
           req.headers["x-forwarded-proto"] ||
           (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https")
         const base = process.env.SITE_URL || `${proto}://${host}`
-        const link = `${base.replace(/\/$/, "")}/auth/redefinir/${token}?mode=${mode}`
+        const cbParam = callbackUrl ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ""
+        const link = `${base.replace(/\/$/, "")}/auth/redefinir/${token}?mode=${mode}${cbParam}`
 
         const subject = mode === "activate"
           ? "Ativar a tua conta — NeoGeneralista"

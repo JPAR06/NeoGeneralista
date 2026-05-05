@@ -1,35 +1,26 @@
 import Link from "next/link";
 import Head from "next/head";
 import { PortableText } from "@portabletext/react";
-import ConstellationCanvasAH from "../../components/ConstellationCanvasAH";
-import { getNoticias, getNoticia } from "../../lib/sanity";
+import ConstellationCanvasAH from "../../../components/ConstellationCanvasAH";
+import { getNoticias, getNoticia } from "../../../lib/sanity";
+import { makePtComponents } from "../../../lib/portableText";
 
-const ptComponents = {
-  types: {
-    image: ({ value }) => (
-      <img
-        src={`https://cdn.sanity.io/images/${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}/${process.env.NEXT_PUBLIC_SANITY_DATASET || "production"}/${value.asset._ref.replace("image-", "").replace(/-(\w+)$/, ".$1")}`}
-        alt=""
-        className="blog-content-img"
-      />
-    ),
-  },
-};
+const ptComponents = makePtComponents("ahb-content-img");
 
-export default function NoticiaPage({ noticia }) {
+export default function AhPostPage({ noticia }) {
   if (!noticia) {
     return (
       <div className="ahv4-page" style={{ padding: "120px 32px", textAlign: "center" }}>
         <p>Artigo não encontrado.</p>
-        <Link href="/noticias">← Voltar ao blog</Link>
+        <Link href="/algoritmo-humano/blog" className="ahb-back-link">← Voltar ao blog</Link>
       </div>
     );
   }
 
-  const pageTitle = `${noticia.titulo} | Algoritmo Humano`;
-  const pageDesc = noticia.resumo || `${noticia.titulo} — artigo do blog Algoritmo Humano.`;
+  const pageTitle = `${noticia.titulo} | AlgoritmoHumano`;
+  const pageDesc = noticia.resumo || `${noticia.titulo} — artigo do blog AlgoritmoHumano.`;
   const pageImage = noticia.imagemUrl || "https://neogeneralista.pt/algoritmo-humano-logo-cor.png";
-  const pageUrl = `https://neogeneralista.pt/noticias/${noticia.slug?.current}`;
+  const pageUrl = `https://neogeneralista.pt/algoritmo-humano/blog/${noticia.slug?.current}`;
 
   return (
     <div className="ahv4-page">
@@ -51,10 +42,9 @@ export default function NoticiaPage({ noticia }) {
       </Head>
       <ConstellationCanvasAH />
 
-      {/* Nav */}
       <header className="ev-nav">
         <div className="ev-nav-inner">
-          <Link href="/noticias" className="ev-back">
+          <Link href="/algoritmo-humano/blog" className="ev-back">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15 18 9 12 15 6" />
             </svg>
@@ -66,20 +56,19 @@ export default function NoticiaPage({ noticia }) {
         </div>
       </header>
 
-      <main className="blog-main">
-        <article className="blog-article">
-          {/* Hero */}
+      <main className="ahb-main">
+        <article className="ahb-article">
           {noticia.imagemUrl && (
-            <div className="blog-article-hero">
-              <img src={noticia.imagemUrl} alt={noticia.titulo} className="blog-article-hero-img" />
+            <div className="ahb-article-hero">
+              <img src={noticia.imagemUrl} alt={noticia.titulo} className="ahb-article-hero-img" />
             </div>
           )}
 
-          <div className="blog-article-container">
-            <div className="blog-article-header">
-              {noticia.categoria && <span className="blog-chip">{noticia.categoria}</span>}
-              <h1 className="blog-article-title">{noticia.titulo}</h1>
-              <div className="blog-meta blog-meta--article">
+          <div className="ahb-article-container">
+            <div className="ahb-article-header">
+              {noticia.categoria && <span className="ahb-chip">{noticia.categoria}</span>}
+              <h1 className="ahb-article-title">{noticia.titulo}</h1>
+              <div className="ahb-meta ahb-meta--article">
                 {noticia.autor && <span>{noticia.autor}</span>}
                 {noticia.dataPublicacao && (
                   <span>{new Date(noticia.dataPublicacao).toLocaleDateString("pt-PT", { year: "numeric", month: "long", day: "numeric" })}</span>
@@ -88,13 +77,13 @@ export default function NoticiaPage({ noticia }) {
             </div>
 
             {noticia.conteudo && (
-              <div className="blog-article-body">
+              <div className="ahb-article-body">
                 <PortableText value={noticia.conteudo} components={ptComponents} />
               </div>
             )}
 
-            <div className="blog-article-footer">
-              <Link href="/noticias" className="blog-back-link">← Ver todos os artigos</Link>
+            <div className="ahb-article-footer">
+              <Link href="/algoritmo-humano/blog" className="ahb-back-link">← Ver todos os artigos</Link>
             </div>
           </div>
         </article>
@@ -105,7 +94,7 @@ export default function NoticiaPage({ noticia }) {
 
 export async function getStaticPaths() {
   let noticias = [];
-  try { noticias = await getNoticias() ?? []; } catch {}
+  try { noticias = (await getNoticias("algoritmohumano")) ?? []; } catch {}
   return {
     paths: noticias.map((n) => ({ params: { slug: n.slug?.current ?? "" } })).filter((p) => p.params.slug),
     fallback: "blocking",
@@ -114,7 +103,7 @@ export async function getStaticPaths() {
 
 export async function getStaticProps({ params }) {
   let noticia = null;
-  try { noticia = await getNoticia(params.slug); } catch {}
+  try { noticia = await getNoticia(params.slug, "algoritmohumano"); } catch {}
   if (!noticia) return { notFound: true };
   return { props: { noticia }, revalidate: 60 };
 }

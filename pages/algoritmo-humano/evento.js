@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { client, getEventoProximo } from "../../lib/sanity";
@@ -16,6 +16,33 @@ export default function EventoDetalhe({ evento, prev, next }) {
 
   const fotos = evento?.fotosPostEventoUrls || [];
   const isPast = evento?.dataISO && new Date(evento.dataISO).getTime() < Date.now();
+
+  // Horizontal photo strip controls
+  const galleryRef = useRef(null);
+  const [galLeft, setGalLeft] = useState(false);
+  const [galRight, setGalRight] = useState(false);
+
+  const updateGalArrows = () => {
+    const el = galleryRef.current;
+    if (!el) return;
+    setGalLeft(el.scrollLeft > 4);
+    setGalRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateGalArrows();
+    const onResize = () => updateGalArrows();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [fotos.length]);
+
+  const galleryScrollBy = (dir) => {
+    const el = galleryRef.current;
+    if (!el) return;
+    const card = el.querySelector(".ev-gallery-img-wrap");
+    const step = card ? card.getBoundingClientRect().width + 16 : 320;
+    el.scrollBy({ left: dir * step, behavior: "smooth" });
+  };
 
   useEffect(() => {
     if (!evento?._id) return;
@@ -227,19 +254,37 @@ export default function EventoDetalhe({ evento, prev, next }) {
 
               {fotos.length > 0 && (
                 <div className="ev-gallery">
-                  <p className="ev-gallery-title">Fotos do evento</p>
-                  <div className="ev-gallery-grid">
-                    {fotos.map((url, i) => (
+                  <p className="ev-gallery-title">Fotos do evento ({fotos.length})</p>
+                  <div className="ev-gallery-strip-wrap">
+                    {galLeft && (
                       <button
-                        key={i}
                         type="button"
-                        className="ev-gallery-img-wrap"
-                        onClick={() => setLightboxIdx(i)}
-                        aria-label={`Abrir foto ${i + 1}`}
-                      >
-                        <img src={url} alt={`Foto ${i + 1}`} className="ev-gallery-img" loading="lazy" />
-                      </button>
-                    ))}
+                        className="ev-gallery-arrow ev-gallery-arrow--left"
+                        onClick={() => galleryScrollBy(-1)}
+                        aria-label="Fotos anteriores"
+                      >‹</button>
+                    )}
+                    {galRight && (
+                      <button
+                        type="button"
+                        className="ev-gallery-arrow ev-gallery-arrow--right"
+                        onClick={() => galleryScrollBy(1)}
+                        aria-label="Fotos seguintes"
+                      >›</button>
+                    )}
+                    <div ref={galleryRef} className="ev-gallery-strip" onScroll={updateGalArrows}>
+                      {fotos.map((url, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          className="ev-gallery-img-wrap"
+                          onClick={() => setLightboxIdx(i)}
+                          aria-label={`Abrir foto ${i + 1}`}
+                        >
+                          <img src={url} alt={`Foto ${i + 1}`} className="ev-gallery-img" loading="lazy" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}

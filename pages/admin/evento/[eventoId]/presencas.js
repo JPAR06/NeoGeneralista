@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { client } from "../../../../lib/sanity";
 import { requireAdmin } from "../../../../lib/admin";
@@ -8,7 +9,7 @@ export async function getServerSideProps(ctx) {
 
   const { eventoId } = ctx.params;
   const evento = await client.fetch(
-    `*[_type == "eventoProximo" && _id == $id][0]{_id, edicao, tema, data, horario, local, dataISO}`,
+    `*[_type == "eventoProximo" && _id == $id][0]{_id, edicao, tema, data, horario, local, dataISO, ultimaNotificacaoAt, ultimaNotificacaoSubject}`,
     { id: eventoId }
   );
   if (!evento) return { notFound: true };
@@ -44,7 +45,7 @@ export async function getServerSideProps(ctx) {
 
 export default function Presencas({
   evento,
-  reservas,
+  reservas: initialReservas,
   qrUrl,
   qrFullUrl,
   printUrl,
@@ -53,9 +54,57 @@ export default function Presencas({
   studioUrl,
   checkinUrl,
 }) {
+  const [reservas, setReservas] = useState(initialReservas);
+  const [pending, setPending] = useState({});  // { reservaId: boolean }
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return reservas;
+    return reservas.filter(
+      (r) => r.nome?.toLowerCase().includes(q) || r.email?.toLowerCase().includes(q)
+    );
+  }, [reservas, search]);
+
   const total = reservas.length;
   const presentes = reservas.filter((r) => r.checkedIn).length;
   const taxa = total ? Math.round((presentes / total) * 100) : 0;
+
+  async function toggle(reserva) {
+    const next = !reserva.checkedIn;
+    // Optimistic update
+    const prev = reservas;
+    setReservas((rs) =>
+      rs.map((r) =>
+        r._id === reserva._id
+          ? { ...r, checkedIn: next, checkedInAt: next ? new Date().toISOString() : null }
+          : r
+      )
+    );
+    setPending((p) => ({ ...p, [reserva._id]: true }));
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/checkin-toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ reservaId: reserva._id, checkedIn: next }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    } catch (e) {
+      // Revert
+      setReservas(prev);
+      setError(`Erro ao actualizar ${reserva.nome}: ${e.message}`);
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setPending((p) => {
+        const { [reserva._id]: _, ...rest } = p;
+        return rest;
+      });
+    }
+  }
 
   return (
     <div style={s.page}>
@@ -99,10 +148,40 @@ export default function Presencas({
           </p>
         </section>
 
+        <NotifyBlock evento={evento} confirmadosCount={total} />
+
+
         <section>
-          <h2 style={s.h2}>Lista de inscritos confirmados</h2>
+          <div style={s.listHeader}>
+            <h2 style={s.h2}>Lista de inscritos confirmados</h2>
+            <p style={s.muted}>
+              Clica nas caixas para marcar/desmarcar manualmente (override do QR).
+            </p>
+          </div>
+
+          {reservas.length > 0 && (
+            <div style={s.searchWrap}>
+              <input
+                type="search"
+                placeholder="Procurar por nome ou email…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={s.search}
+              />
+              {search && (
+                <span style={s.searchCount}>
+                  {filtered.length} de {total}
+                </span>
+              )}
+            </div>
+          )}
+
+          {error && <p style={s.errorBanner}>{error}</p>}
+
           {reservas.length === 0 ? (
             <p style={s.muted}>Sem inscrições confirmadas ainda.</p>
+          ) : filtered.length === 0 ? (
+            <p style={s.muted}>Nenhum resultado para “{search}”.</p>
           ) : (
             <table style={s.table}>
               <thead>
@@ -114,18 +193,32 @@ export default function Presencas({
                 </tr>
               </thead>
               <tbody>
-                {reservas.map((r) => (
-                  <tr key={r._id} style={r.checkedIn ? s.rowIn : undefined}>
-                    <td style={s.td}>{r.checkedIn ? "✅" : "—"}</td>
-                    <td style={s.td}>{r.nome}</td>
-                    <td style={{ ...s.td, color: "#666", fontSize: 13 }}>{r.email}</td>
-                    <td style={s.td}>
-                      {r.checkedInAt
-                        ? new Date(r.checkedInAt).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })
-                        : ""}
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map((r) => {
+                  const isPending = !!pending[r._id];
+                  return (
+                    <tr key={r._id} style={r.checkedIn ? s.rowIn : undefined}>
+                      <td style={s.tdCheckbox}>
+                        <label style={{ ...s.checkboxLabel, opacity: isPending ? 0.5 : 1 }}>
+                          <input
+                            type="checkbox"
+                            checked={!!r.checkedIn}
+                            disabled={isPending}
+                            onChange={() => toggle(r)}
+                            style={s.checkbox}
+                            aria-label={`Marcar ${r.nome} como presente`}
+                          />
+                        </label>
+                      </td>
+                      <td style={s.td}>{r.nome}</td>
+                      <td style={{ ...s.td, color: "#666", fontSize: 13 }}>{r.email}</td>
+                      <td style={s.td}>
+                        {r.checkedInAt
+                          ? new Date(r.checkedInAt).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })
+                          : ""}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
@@ -144,6 +237,164 @@ function Stat({ label, value }) {
   );
 }
 
+const NOTIFY_TEMPLATES = [
+  {
+    id: "atraso",
+    label: "Atraso",
+    subject: "Atraso no início",
+    message: "Olá! Devido a um imprevisto, o evento começará com algum atraso. Avisaremos quando estivermos prontos. Obrigado pela compreensão!",
+  },
+  {
+    id: "local",
+    label: "Mudança de local",
+    subject: "Mudança de local",
+    message: "Olá! Importante: o local do evento mudou. Nova morada: [INDICAR AQUI]. Pedimos desculpa pelo inconveniente.",
+  },
+  {
+    id: "cancel",
+    label: "Cancelamento",
+    subject: "Evento cancelado",
+    message: "Olá! Lamentamos informar que o evento de hoje foi cancelado. Estamos a remarcar e damos mais informações em breve. Obrigado pela compreensão.",
+  },
+];
+
+function NotifyBlock({ evento, confirmadosCount }) {
+  const [open, setOpen] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [includeWaitlist, setIncludeWaitlist] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState(null); // { ok, sent, failed, total } | { error }
+
+  const lastSent = evento.ultimaNotificacaoAt
+    ? new Date(evento.ultimaNotificacaoAt)
+    : null;
+  const lastSentMinutes = lastSent ? Math.floor((Date.now() - lastSent.getTime()) / 60000) : null;
+  const recentlySent = lastSentMinutes !== null && lastSentMinutes < 30;
+
+  const applyTemplate = (t) => {
+    setSubject(t.subject);
+    setMessage(t.message);
+  };
+
+  const handleSend = async () => {
+    if (!subject.trim() || !message.trim()) {
+      setResult({ error: "Preenche assunto e mensagem." });
+      return;
+    }
+    if (!confirm(`Enviar notificação para ${confirmadosCount}${includeWaitlist ? " (+ lista espera)" : ""} inscritos?`)) {
+      return;
+    }
+    setSending(true);
+    setResult(null);
+    try {
+      const res = await fetch("/api/admin/notify-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ eventoId: evento._id, subject, message, includeWaitlist }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      setResult(data);
+      if (data.sent > 0) {
+        setSubject("");
+        setMessage("");
+      }
+    } catch (e) {
+      setResult({ error: e.message });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <section style={s.notifyBox}>
+      <button type="button" onClick={() => setOpen((o) => !o)} style={s.notifyToggle}>
+        <span>📨 Notificar inscritos por email</span>
+        <span>{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div style={s.notifyBody}>
+          {recentlySent && (
+            <p style={s.notifyWarn}>
+              ⚠️ Última notificação enviada há {lastSentMinutes} min
+              {evento.ultimaNotificacaoSubject ? ` ("${evento.ultimaNotificacaoSubject}")` : ""}.
+              Confirma que não estás a duplicar.
+            </p>
+          )}
+
+          <p style={s.muted}>Templates rápidos:</p>
+          <div style={s.notifyTemplates}>
+            {NOTIFY_TEMPLATES.map((t) => (
+              <button key={t.id} type="button" onClick={() => applyTemplate(t)} style={s.notifyChip}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <label style={s.notifyLabel}>
+            Assunto
+            <input
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Ex: Atraso no início"
+              style={s.notifyInput}
+              maxLength={120}
+              disabled={sending}
+            />
+          </label>
+
+          <label style={s.notifyLabel}>
+            Mensagem
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="O texto que aparece no corpo do email…"
+              rows={5}
+              style={{ ...s.notifyInput, fontFamily: "inherit", resize: "vertical" }}
+              disabled={sending}
+            />
+          </label>
+
+          <label style={s.notifyCheckLabel}>
+            <input
+              type="checkbox"
+              checked={includeWaitlist}
+              onChange={(e) => setIncludeWaitlist(e.target.checked)}
+              disabled={sending}
+            />
+            <span>Incluir lista de espera</span>
+          </label>
+
+          <div style={s.notifyActions}>
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={sending || !subject.trim() || !message.trim()}
+              style={{ ...s.btn, ...s.btnPrimary, opacity: sending ? 0.5 : 1 }}
+            >
+              {sending
+                ? "A enviar…"
+                : `Enviar a ${confirmadosCount}${includeWaitlist ? " + lista" : ""} inscritos`}
+            </button>
+          </div>
+
+          {result?.error && <p style={s.errorBanner}>Erro: {result.error}</p>}
+          {result?.ok && (
+            <p style={s.notifySuccess}>
+              ✅ {result.sent} email(s) enviados de {result.total}.
+              {result.failed > 0 ? ` ${result.failed} falharam.` : ""}
+            </p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 const s = {
   page: { minHeight: "100dvh", background: "#f4f4f4", fontFamily: "Arial, sans-serif", color: "#1a1a1a", padding: "32px 16px" },
   container: { maxWidth: 900, margin: "0 auto" },
@@ -152,7 +403,7 @@ const s = {
   header: { marginBottom: 24 },
   eyebrow: { textTransform: "uppercase", fontSize: 12, letterSpacing: 1, color: "#888", margin: 0 },
   h1: { fontSize: 28, margin: "6px 0 8px" },
-  h2: { fontSize: 18, margin: "0 0 12px" },
+  h2: { fontSize: 18, margin: "0 0 6px" },
   muted: { color: "#777", fontSize: 14, margin: "4px 0" },
   stats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, margin: "16px 0" },
   stat: { background: "#fff", borderRadius: 8, padding: 16, textAlign: "center" },
@@ -164,8 +415,123 @@ const s = {
   qrBox: { background: "#fff", borderRadius: 8, padding: 20, marginBottom: 24, textAlign: "center" },
   code: { display: "inline-block", background: "#f0f0f0", padding: "4px 8px", borderRadius: 4, fontSize: 12, wordBreak: "break-all" },
   qrImg: { maxWidth: 240, width: "100%", height: "auto", border: "1px solid #eee", borderRadius: 4 },
+  listHeader: { marginBottom: 12 },
+  searchWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    margin: "0 0 12px",
+  },
+  search: {
+    flex: 1,
+    padding: "10px 14px",
+    border: "1px solid #e5e5e5",
+    borderRadius: 6,
+    fontSize: 14,
+    background: "#fff",
+    color: "#1a1a1a",
+    outline: "none",
+  },
+  searchCount: { color: "#888", fontSize: 13 },
+  errorBanner: {
+    background: "#fff1f0",
+    border: "1px solid #ffccc7",
+    color: "#a8071a",
+    padding: "10px 14px",
+    borderRadius: 6,
+    fontSize: 14,
+    margin: "0 0 12px",
+  },
   table: { width: "100%", background: "#fff", borderCollapse: "collapse", borderRadius: 8, overflow: "hidden" },
   th: { textAlign: "left", padding: "10px 12px", borderBottom: "1px solid #eee", fontSize: 13, color: "#666", background: "#fafafa" },
   td: { padding: "10px 12px", borderBottom: "1px solid #f5f5f5", fontSize: 14 },
+  tdCheckbox: { padding: "10px 12px", borderBottom: "1px solid #f5f5f5", textAlign: "center", width: 80 },
+  checkboxLabel: { display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 4 },
+  checkbox: { width: 18, height: 18, accentColor: "#1a7f37", cursor: "pointer" },
   rowIn: { background: "#f3faf3" },
+  notifyBox: {
+    background: "#fff",
+    borderRadius: 8,
+    marginBottom: 24,
+    overflow: "hidden",
+    border: "1px solid #e5e5e5",
+  },
+  notifyToggle: {
+    width: "100%",
+    padding: "14px 18px",
+    background: "#fff",
+    border: 0,
+    cursor: "pointer",
+    fontSize: 15,
+    fontWeight: 600,
+    color: "#1a1a1a",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    fontFamily: "inherit",
+  },
+  notifyBody: {
+    padding: "8px 18px 18px",
+    borderTop: "1px solid #f0f0f0",
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  notifyWarn: {
+    background: "#fff7ed",
+    border: "1px solid #fed7aa",
+    color: "#9a3412",
+    padding: "10px 14px",
+    borderRadius: 6,
+    fontSize: 13,
+    margin: 0,
+  },
+  notifyTemplates: { display: "flex", flexWrap: "wrap", gap: 6 },
+  notifyChip: {
+    padding: "6px 12px",
+    background: "#f4f4f4",
+    border: "1px solid #e5e5e5",
+    borderRadius: 16,
+    fontSize: 13,
+    cursor: "pointer",
+    color: "#444",
+    fontFamily: "inherit",
+  },
+  notifyLabel: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    fontSize: 13,
+    color: "#555",
+    fontWeight: 500,
+  },
+  notifyInput: {
+    padding: "10px 12px",
+    border: "1px solid #e5e5e5",
+    borderRadius: 6,
+    fontSize: 14,
+    background: "#fff",
+    color: "#1a1a1a",
+    outline: "none",
+    width: "100%",
+    boxSizing: "border-box",
+  },
+  notifyCheckLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: 14,
+    color: "#444",
+    cursor: "pointer",
+  },
+  notifyActions: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 },
+  notifySuccess: {
+    background: "#e6f6ec",
+    border: "1px solid #86efac",
+    color: "#166534",
+    padding: "10px 14px",
+    borderRadius: 6,
+    fontSize: 14,
+    margin: 0,
+  },
 };

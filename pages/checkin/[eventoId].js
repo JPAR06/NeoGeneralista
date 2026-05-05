@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../api/auth/[...nextauth]";
 
@@ -46,6 +47,7 @@ function Result({ data }) {
 
   const { status, evento, reserva, error } = data;
   const titulo = evento ? (evento.edicao || evento.tema || "AlgoritmoHumano") : "";
+  const eventoLink = evento?._id ? `/algoritmo-humano/evento?id=${evento._id}` : "/algoritmo-humano";
 
   if (error) return <Msg icon="⚠️" title="Algo correu mal" body={error} tone="error" />;
 
@@ -93,8 +95,9 @@ function Result({ data }) {
         <Msg
           icon="❌"
           title="Sem inscrição"
-          body={`Não encontrámos uma inscrição tua para ${titulo}. Inscreve-te primeiro.`}
+          body={`Não encontrámos uma inscrição tua para ${titulo}. Vai à página do evento para te inscreveres.`}
           tone="error"
+          cta={{ href: eventoLink, label: "Ver evento e inscrever" }}
         />
       );
     case "waitlist":
@@ -104,6 +107,7 @@ function Result({ data }) {
           title="Estás em lista de espera"
           body="Só podes fazer check-in depois de a tua inscrição ser confirmada."
           tone="info"
+          cta={{ href: eventoLink, label: "Ver evento" }}
         />
       );
     case "cancelled":
@@ -113,6 +117,7 @@ function Result({ data }) {
           title="Inscrição cancelada"
           body="A tua inscrição para este evento foi cancelada."
           tone="error"
+          cta={{ href: eventoLink, label: "Ver evento e inscrever" }}
         />
       );
     default:
@@ -120,7 +125,7 @@ function Result({ data }) {
   }
 }
 
-function Msg({ icon, title, body, tone, timestamp }) {
+function Msg({ icon, title, body, tone, timestamp, cta }) {
   const color = tone === "success" ? "#1a7f37" : tone === "error" ? "#b42318" : "#1a1a1a";
   return (
     <>
@@ -131,6 +136,9 @@ function Msg({ icon, title, body, tone, timestamp }) {
         <p style={styles.muted}>
           {new Date(timestamp).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })}
         </p>
+      )}
+      {cta && (
+        <Link href={cta.href} style={styles.cta}>{cta.label} →</Link>
       )}
     </>
   );
@@ -173,6 +181,17 @@ const styles = {
     borderRadius: "50%",
     margin: "0 auto 16px",
     animation: "spin 0.8s linear infinite",
+  },
+  cta: {
+    display: "inline-block",
+    marginTop: 18,
+    padding: "10px 18px",
+    background: "#F05A78",
+    color: "#fff",
+    borderRadius: 6,
+    textDecoration: "none",
+    fontWeight: 600,
+    fontSize: 14,
   },
 };
 

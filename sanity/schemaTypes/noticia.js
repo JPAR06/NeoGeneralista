@@ -11,6 +11,21 @@ export default {
       options: { source: 'titulo', maxLength: 96 },
       validation: (Rule) => Rule.required(),
     },
+    {
+      name: 'secao',
+      title: 'Secção',
+      type: 'string',
+      description: 'Define em que blog o post aparece e quem recebe o email de notificação.',
+      options: {
+        list: [
+          { title: 'NeoGeneralista', value: 'neogeneralista' },
+          { title: 'AlgoritmoHumano', value: 'algoritmohumano' },
+        ],
+        layout: 'radio',
+      },
+      initialValue: 'neogeneralista',
+      validation: (Rule) => Rule.required(),
+    },
     { name: 'resumo', title: 'Resumo', type: 'text', rows: 3, description: 'Resumo curto para cards e email' },
     {
       name: 'conteudo',
@@ -46,10 +61,11 @@ export default {
     { name: 'notificacaoEnviada', title: 'Notificação enviada', type: 'boolean', initialValue: false, readOnly: true },
   ],
   preview: {
-    select: { title: 'titulo', subtitle: 'categoria', publicado: 'publicado' },
-    prepare({ title, subtitle, publicado }) {
+    select: { title: 'titulo', subtitle: 'categoria', publicado: 'publicado', secao: 'secao' },
+    prepare({ title, subtitle, publicado, secao }) {
+      const tag = secao === 'algoritmohumano' ? '[AH]' : '[NG]'
       return {
-        title: `${publicado ? '✅' : '📝'} ${title}`,
+        title: `${publicado ? '✅' : '📝'} ${tag} ${title}`,
         subtitle: subtitle || 'Sem categoria',
       }
     },

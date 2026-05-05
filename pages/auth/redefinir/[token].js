@@ -4,15 +4,18 @@ import { signIn } from "next-auth/react"
 import ConstellationCanvasAH from "../../../components/ConstellationCanvasAH"
 import PasswordInput from "../../../components/PasswordInput"
 import { peekPasswordResetToken } from "../../../lib/auth-tokens"
+import { safeCallback } from "../../../lib/callback"
 
 export async function getServerSideProps(ctx) {
   const { token } = ctx.params
   const mode = ctx.query.mode === "activate" ? "activate" : "reset"
+  const callbackUrl = safeCallback(ctx.query.callbackUrl)
   const status = await peekPasswordResetToken(token)
   return {
     props: {
       token,
       mode,
+      callbackUrl,
       tokenValid: status.valid,
       tokenReason: status.valid ? null : status.reason,
       email: status.email || null,
@@ -20,8 +23,10 @@ export async function getServerSideProps(ctx) {
   }
 }
 
-export default function Redefinir({ token, mode, tokenValid, tokenReason, email }) {
+export default function Redefinir({ token, mode, callbackUrl, tokenValid, tokenReason, email }) {
   const isActivate = mode === "activate"
+  const loginHref = `/auth/entrar?callbackUrl=${encodeURIComponent(callbackUrl)}`
+  const recoverHref = `/auth/recuperar?callbackUrl=${encodeURIComponent(callbackUrl)}`
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
   const [error, setError] = useState("")
@@ -51,7 +56,7 @@ export default function Redefinir({ token, mode, tokenValid, tokenReason, email 
       const signInRes = await signIn("credentials", { email, password, redirect: false })
       setLoading(false)
       if (!signInRes?.error) {
-        window.location.href = "/algoritmo-humano"
+        window.location.href = callbackUrl
         return
       }
     }
@@ -74,7 +79,7 @@ export default function Redefinir({ token, mode, tokenValid, tokenReason, email 
               : "Este link não existe ou é inválido."}
           </p>
           <p className="ahv4-auth-switch">
-            <Link href="/auth/recuperar" className="ahv4-auth-link">Pedir novo link</Link>
+            <Link href={recoverHref} className="ahv4-auth-link">Pedir novo link</Link>
           </p>
         </div>
       </div>
@@ -92,7 +97,7 @@ export default function Redefinir({ token, mode, tokenValid, tokenReason, email 
             Já podes entrar com a {isActivate ? "tua nova" : "nova"} palavra-passe.
           </p>
           <p className="ahv4-auth-switch">
-            <Link href="/auth/entrar" className="ahv4-auth-link">Ir para o login</Link>
+            <Link href={loginHref} className="ahv4-auth-link">Ir para o login</Link>
           </p>
         </div>
       </div>

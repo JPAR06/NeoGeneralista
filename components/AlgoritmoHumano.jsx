@@ -118,7 +118,7 @@ export default function AlgoritmoHumano({
                 {item.label}
               </button>
             ))}
-            <Link href="/noticias" className="ahv4-nav-link">Blog</Link>
+            <Link href="/algoritmo-humano/blog" className="ahv4-nav-link">Blog</Link>
           </nav>
           <div className="ahv4-nav-end">
             <AuthButtons />
@@ -146,7 +146,7 @@ export default function AlgoritmoHumano({
                   {item.label}
                 </button>
               ))}
-              <Link href="/noticias" className="ahv4-mobile-link">Blog</Link>
+              <Link href="/algoritmo-humano/blog" className="ahv4-mobile-link">Blog</Link>
               <div className="ahv4-mobile-auth">
                 <AuthButtons />
               </div>

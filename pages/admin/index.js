@@ -37,7 +37,7 @@ export default function AdminDashboard({ eventos, user }) {
           </div>
           <div style={s.userBox}>
             <span style={s.muted}>Sessão: {user.email}</span>
-            <a href="/api/exportar-utilizadores" style={s.exportUsers}>Exportar site/newsletter</a>
+            <Link href="/admin/utilizadores" style={s.exportUsers}>Ver utilizadores →</Link>
           </div>
         </header>
 

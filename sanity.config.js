@@ -1,12 +1,19 @@
 import { defineConfig } from 'sanity'
 import { deskTool } from 'sanity/desk'
 import { schemaTypes } from './sanity/schemaTypes'
+import { NotifySubscribersAction } from './sanity/actions/notifySubscribers'
 
 export default defineConfig({
   name: 'neogeneralista',
   title: 'NeoGeneralista',
   projectId: '8yfcfj67',
   dataset: 'production',
+  document: {
+    actions: (prev, ctx) =>
+      ctx.schemaType === 'noticia'
+        ? [...prev, NotifySubscribersAction]
+        : prev,
+  },
   plugins: [
     deskTool({
       structure: (S) =>

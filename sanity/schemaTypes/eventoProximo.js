@@ -61,5 +61,18 @@ export default {
       description: 'Ativar para abrir as inscrições. Desativar para fechar.',
       initialValue: false,
     },
+    {
+      name: 'ultimaNotificacaoAt',
+      title: 'Última notificação enviada',
+      type: 'datetime',
+      readOnly: true,
+      description: 'Preenchido automaticamente quando se envia notificação aos inscritos.',
+    },
+    {
+      name: 'ultimaNotificacaoSubject',
+      title: 'Última notificação — assunto',
+      type: 'string',
+      readOnly: true,
+    },
   ],
 }
