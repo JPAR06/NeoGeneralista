@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Head from "next/head";
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
 
 export default function AlgoritmoHumano({
   eventos = [],
+  passados = [],
   equipa = [],
   patrocinadores = [],
 }) {
@@ -176,41 +177,13 @@ export default function AlgoritmoHumano({
         </div>
       </section>
 
-      {/* ── PRÓXIMO(S) EVENTO(S) ── */}
+      {/* ── EVENTOS (carrossel: passados ← próximos) ── */}
       <section className="ahv4-section" id="evento">
         <div className="ahv4-container">
-          <div className={`ahv4-events-grid ahv4-events-grid--${eventos.length === 2 ? "two" : "one"}`}>
-            {eventos.length > 0 ? eventos.map((evento, i) => (
-              <Link key={evento._id ?? i} href={`/algoritmo-humano/evento${evento._id ? `?id=${evento._id}` : ''}`} className="ahv4-event-card">
-                {evento.imagemEventoUrl ? (
-                  <img src={evento.imagemEventoUrl} alt={evento.tema} className="ahv4-event-card-img" />
-                ) : (
-                  <div className="ahv4-event-card-img ahv4-event-card-img--placeholder" />
-                )}
-                <div className="ahv4-event-card-body">
-                  <p className="ahv4-event-card-kicker">{i === 0 ? "Próximo Evento" : "A Seguir"}</p>
-                  <p className="ahv4-event-card-theme">{evento.tema || "Em breve"}</p>
-                  <div className="ahv4-event-card-meta">
-                    {evento.convidado && <span className="ahv4-event-card-detail">🎤 {evento.convidado}</span>}
-                    {evento.data && <span className="ahv4-event-card-detail">📅 {evento.data}</span>}
-                    {evento.horario && <span className="ahv4-event-card-detail">🕡 {evento.horario}</span>}
-                    {evento.local && <span className="ahv4-event-card-detail">📍 {evento.local}</span>}
-                  </div>
-                  <span className="ahv4-event-card-cta">Inscreve-te →</span>
-                </div>
-              </Link>
-            )) : (
-              <div className="ahv4-event-card">
-                <div className="ahv4-event-card-img ahv4-event-card-img--placeholder" />
-                <div className="ahv4-event-card-body">
-                  <p className="ahv4-event-card-kicker">Próximo Evento</p>
-                  <p className="ahv4-event-card-theme">Em breve</p>
-                </div>
-              </div>
-            )}
-          </div>
+          <EventsCarousel proximos={eventos} passados={passados} />
         </div>
       </section>
+
 
       {/* ── SOBRE ── */}
       <section className="ahv4-section ahv4-section--dark" id="sobre">
@@ -247,12 +220,18 @@ export default function AlgoritmoHumano({
             {equipa.length > 0 ? (
               equipa.map((m, i) => (
                 <div key={i} className="ahv4-team-card">
-                  <div
-                    className="ahv4-team-avatar"
-                    style={{ background: m.corAvatar || "#F05A78", color: m.corTexto || "#fff" }}
-                  >
-                    {m.iniciais}
-                  </div>
+                  {m.fotoUrl ? (
+                    <div className="ahv4-team-avatar ahv4-team-avatar--photo">
+                      <img src={m.fotoUrl} alt={m.nome} loading="lazy" />
+                    </div>
+                  ) : (
+                    <div
+                      className="ahv4-team-avatar"
+                      style={{ background: m.corAvatar || "#F05A78", color: m.corTexto || "#fff" }}
+                    >
+                      {m.iniciais}
+                    </div>
+                  )}
                   <div className="ahv4-team-info">
                     <p className="ahv4-team-name">{m.nome}</p>
                     <p className="ahv4-team-role">{m.funcao}</p>
@@ -402,6 +381,130 @@ export default function AlgoritmoHumano({
         </div>
       </footer>
 
+    </div>
+  );
+}
+
+function EventsCarousel({ proximos = [], passados = [] }) {
+  const scrollerRef = useRef(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  // Build a single chronological strip: oldest past → most recent past →
+  // next upcoming → "A seguir" upcoming. `passados` arrives newest-first, so
+  // we reverse it; `proximos` arrives oldest-first (next then "A seguir").
+  const items = [
+    ...passados.slice().reverse().map((e) => ({ evento: e, kind: "past" })),
+    ...proximos.map((e, i) => ({ evento: e, kind: i === 0 ? "next" : "later" })),
+  ];
+
+  // Show an "Em breve" placeholder when nothing exists at all.
+  const empty = items.length === 0;
+
+  const updateArrows = () => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  // After mount, scroll the first upcoming card into view so users see the
+  // "Próximo Evento" first, can swipe ← to look at past editions.
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const target = el.querySelector('[data-card-anchor="next"]') || el.querySelector(".ahv4-event-card");
+    if (target) {
+      // Align the next card to the start of the visible scroller.
+      el.scrollLeft = Math.max(0, target.offsetLeft - el.offsetLeft);
+    }
+    updateArrows();
+    const onResize = () => updateArrows();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
+
+  const scrollByCard = (dir) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const card = el.querySelector(".ahv4-event-card");
+    const step = card ? card.getBoundingClientRect().width + 24 : 600;
+    el.scrollBy({ left: dir * step, behavior: "smooth" });
+  };
+
+  if (empty) {
+    return (
+      <div className="ahv4-events-grid ahv4-events-grid--one">
+        <div className="ahv4-event-card">
+          <div className="ahv4-event-card-img ahv4-event-card-img--placeholder" />
+          <div className="ahv4-event-card-body">
+            <p className="ahv4-event-card-kicker">Próximo Evento</p>
+            <p className="ahv4-event-card-theme">Em breve</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ahv4-events-strip-wrap">
+      {canLeft && (
+        <button
+          type="button"
+          className="ahv4-events-arrow ahv4-events-arrow--left"
+          onClick={() => scrollByCard(-1)}
+          aria-label="Edições passadas"
+        >
+          <span className="ahv4-events-arrow-icon">‹</span>
+          <span className="ahv4-events-arrow-label">Edições passadas</span>
+        </button>
+      )}
+      {canRight && (
+        <button
+          type="button"
+          className="ahv4-events-arrow ahv4-events-arrow--right"
+          onClick={() => scrollByCard(1)}
+          aria-label="Edições seguintes"
+        >
+          <span className="ahv4-events-arrow-label">Edições seguintes</span>
+          <span className="ahv4-events-arrow-icon">›</span>
+        </button>
+      )}
+      <div ref={scrollerRef} className="ahv4-events-strip" onScroll={updateArrows}>
+        {items.map(({ evento, kind }, i) => {
+          const kicker = kind === "past" ? (evento.edicao || "Edição passada")
+                       : kind === "next" ? "Próximo Evento"
+                       : "A Seguir";
+          const cta = kind === "past" ? "Ver edição →" : "Inscreve-te →";
+          const kickerClass = kind === "past" ? "ahv4-event-card-kicker ahv4-event-card-kicker--past" : "ahv4-event-card-kicker";
+          return (
+            <Link
+              key={evento._id ?? i}
+              href={`/algoritmo-humano/evento${evento._id ? `?id=${evento._id}` : ""}`}
+              className="ahv4-event-card ahv4-events-strip-card"
+              data-card-anchor={kind === "next" ? "next" : undefined}
+            >
+              {evento.imagemEventoUrl ? (
+                <img src={evento.imagemEventoUrl} alt={evento.tema || evento.edicao} className="ahv4-event-card-img" loading="lazy" />
+              ) : (
+                <div className="ahv4-event-card-img ahv4-event-card-img--placeholder" />
+              )}
+              <div className="ahv4-event-card-body">
+                <p className={kickerClass}>{kicker}</p>
+                <p className="ahv4-event-card-theme">{evento.tema || "Em breve"}</p>
+                <div className="ahv4-event-card-meta">
+                  {evento.convidado && <span className="ahv4-event-card-detail">🎤 {evento.convidado}</span>}
+                  {evento.data && <span className="ahv4-event-card-detail">📅 {evento.data}</span>}
+                  {evento.horario && <span className="ahv4-event-card-detail">🕡 {evento.horario}</span>}
+                  {evento.local && <span className="ahv4-event-card-detail">📍 {evento.local}</span>}
+                </div>
+                <span className="ahv4-event-card-cta">{cta}</span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

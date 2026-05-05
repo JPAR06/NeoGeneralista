@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { client, getEventoProximo } from "../../lib/sanity";
+import Lightbox from "../../components/Lightbox";
 
-export default function EventoDetalhe({ evento }) {
+export default function EventoDetalhe({ evento, prev, next }) {
   const { data: session } = useSession();
   const [reserva, setReserva] = useState(null);
   const [contagem, setContagem] = useState(0);
@@ -11,6 +12,10 @@ export default function EventoDetalhe({ evento }) {
   const [msg, setMsg] = useState(null);
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState(null);
+
+  const fotos = evento?.fotosPostEventoUrls || [];
+  const isPast = evento?.dataISO && new Date(evento.dataISO).getTime() < Date.now();
 
   useEffect(() => {
     if (!evento?._id) return;
@@ -105,8 +110,32 @@ export default function EventoDetalhe({ evento }) {
           <div className="ev-layout">
             {/* ── LEFT: info ── */}
             <div className="ev-info">
+              {(prev || next) && (
+                <nav className="ev-nav-bar" aria-label="Navegação entre edições">
+                  {prev ? (
+                    <Link href={`/algoritmo-humano/evento?id=${prev._id}`} className="ev-nav-link ev-nav-link--prev">
+                      <span className="ev-nav-meta">← Edição anterior</span>
+                      <span className="ev-nav-tema">{prev.edicao || prev.tema || "Sem tema"}</span>
+                    </Link>
+                  ) : (
+                    <span className="ev-nav-link ev-nav-link--disabled">
+                      <span className="ev-nav-meta">←</span>
+                    </span>
+                  )}
+                  {next ? (
+                    <Link href={`/algoritmo-humano/evento?id=${next._id}`} className="ev-nav-link ev-nav-link--next">
+                      <span className="ev-nav-meta">Próxima edição →</span>
+                      <span className="ev-nav-tema">{next.edicao || next.tema || "Sem tema"}</span>
+                    </Link>
+                  ) : (
+                    <span className="ev-nav-link ev-nav-link--disabled">
+                      <span className="ev-nav-meta">→</span>
+                    </span>
+                  )}
+                </nav>
+              )}
               <div className="ev-header">
-                <p className="ev-kicker">Próximo Evento</p>
+                <p className="ev-kicker">{isPast ? "Edição passada" : "Próximo Evento"}</p>
                 {evento?.edicao && <p className="ev-edition">{evento.edicao}</p>}
                 <h1 className="ev-theme">{evento?.tema || "A Anunciar"}</h1>
               </div>
@@ -196,12 +225,20 @@ export default function EventoDetalhe({ evento }) {
                 <p className="ev-desc-longa">{evento.descricaoLonga}</p>
               )}
 
-              {evento?.fotosPostEventoUrls?.length > 0 && (
+              {fotos.length > 0 && (
                 <div className="ev-gallery">
                   <p className="ev-gallery-title">Fotos do evento</p>
                   <div className="ev-gallery-grid">
-                    {evento.fotosPostEventoUrls.map((url, i) => (
-                      <img key={i} src={url} alt={`Foto ${i + 1}`} className="ev-gallery-img" />
+                    {fotos.map((url, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="ev-gallery-img-wrap"
+                        onClick={() => setLightboxIdx(i)}
+                        aria-label={`Abrir foto ${i + 1}`}
+                      >
+                        <img src={url} alt={`Foto ${i + 1}`} className="ev-gallery-img" loading="lazy" />
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -212,11 +249,30 @@ export default function EventoDetalhe({ evento }) {
                   <p className="ev-gallery-title">Vídeos do evento</p>
                   <div className="ev-video-grid">
                     {evento.videosEventoUrls.map((url, i) => (
-                      <video key={i} src={url} controls className="ev-video" />
+                      <video
+                        key={i}
+                        src={url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="ev-video"
+                      />
                     ))}
                   </div>
                 </div>
               )}
+
+              <Lightbox
+                photos={fotos}
+                index={lightboxIdx}
+                onClose={() => setLightboxIdx(null)}
+                onNav={(d) => setLightboxIdx((i) => {
+                  if (i == null) return i;
+                  const next = i + d;
+                  if (next < 0 || next >= fotos.length) return i;
+                  return next;
+                })}
+              />
             </div>
 
             {/* ── RIGHT: image + reservation ── */}
@@ -344,12 +400,26 @@ export async function getServerSideProps({ query }) {
       evento = Array.isArray(eventos) ? eventos[0] : eventos;
     }
 
+    // Compute previous/next neighbors by chronological order so the
+    // detail page can render arrows. Uses a slim projection — one query.
+    let prev = null;
+    let next = null;
+    if (evento?._id) {
+      const todos = await client.fetch(
+        `*[_type == "eventoProximo"] | order(coalesce(dataISO, _createdAt) asc){_id, edicao, tema, dataISO}`
+      );
+      const idx = todos.findIndex((e) => e._id === evento._id);
+      if (idx > 0) prev = todos[idx - 1];
+      if (idx >= 0 && idx < todos.length - 1) next = todos[idx + 1];
+    }
+
     return {
-      props: { evento: evento ?? null },
+      props: { evento: evento ?? null, prev, next },
     };
-  } catch {
+  } catch (err) {
+    console.error("[evento gSSP]", err);
     return {
-      props: { evento: null },
+      props: { evento: null, prev: null, next: null },
     };
   }
 }
