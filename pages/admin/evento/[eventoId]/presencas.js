@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { client } from "../../../../lib/sanity";
 import { requireAdmin } from "../../../../lib/admin";
+import clientPromise from "../../../../lib/mongodb";
 
 export async function getServerSideProps(ctx) {
   const guard = await requireAdmin(ctx);
@@ -19,6 +20,28 @@ export async function getServerSideProps(ctx) {
     { eventoId }
   );
 
+  // Users already in this event (any active state) — used to exclude from the
+  // manual-inscribe picker.
+  const activeReservas = await client.fetch(
+    `*[_type == "reserva" && eventoId == $eventoId && estado != "cancelado"]{userId}`,
+    { eventoId }
+  );
+  const usedUserIds = new Set(activeReservas.map((r) => r.userId).filter(Boolean));
+
+  // All registered users in MongoDB, projected for the picker.
+  const mongo = await clientPromise;
+  const allUsers = await mongo.db().collection("users")
+    .find({ email: { $exists: true } }, { projection: { name: 1, email: 1 } })
+    .sort({ name: 1 })
+    .toArray();
+  const eligibleUsers = allUsers
+    .filter((u) => !usedUserIds.has(u._id.toString()))
+    .map((u) => ({
+      id: u._id.toString(),
+      name: u.name || "",
+      email: u.email,
+    }));
+
   const host = ctx.req.headers.host || "";
   const proto =
     ctx.req.headers["x-forwarded-proto"] ||
@@ -31,6 +54,7 @@ export async function getServerSideProps(ctx) {
     props: {
       evento,
       reservas,
+      eligibleUsers,
       qrUrl: `/api/qr/${eventoId}?size=400`,
       qrFullUrl: `/api/qr/${eventoId}?size=1400`,
       printUrl: `/admin/evento/${eventoId}/qr`,
@@ -46,6 +70,7 @@ export async function getServerSideProps(ctx) {
 export default function Presencas({
   evento,
   reservas: initialReservas,
+  eligibleUsers: initialEligible,
   qrUrl,
   qrFullUrl,
   printUrl,
@@ -55,6 +80,7 @@ export default function Presencas({
   checkinUrl,
 }) {
   const [reservas, setReservas] = useState(initialReservas);
+  const [eligible, setEligible] = useState(initialEligible || []);
   const [pending, setPending] = useState({});  // { reservaId: boolean }
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
@@ -148,6 +174,18 @@ export default function Presencas({
           </p>
         </section>
 
+        <ManualInscreverBlock
+          eventoId={evento._id}
+          users={eligible}
+          onInscrito={(novaReserva) => {
+            // Only add to the visible list (which shows estado=confirmado)
+            if (novaReserva.estado === "confirmado") {
+              setReservas((prev) => [...prev, novaReserva]);
+            }
+            setEligible((prev) => prev.filter((u) => u.id !== novaReserva.userId));
+          }}
+        />
+
         <NotifyBlock evento={evento} confirmadosCount={total} />
 
 
@@ -234,6 +272,136 @@ function Stat({ label, value }) {
       <div style={s.statValue}>{value}</div>
       <div style={s.statLabel}>{label}</div>
     </div>
+  );
+}
+
+function ManualInscreverBlock({ eventoId, users, onInscrito }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [sendEmail, setSendEmail] = useState(true);
+  const [pendingId, setPendingId] = useState(null);
+  const [feedback, setFeedback] = useState(null); // { type, text }
+
+  const matches = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return users.slice(0, 8);
+    return users
+      .filter((u) =>
+        u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+      )
+      .slice(0, 12);
+  }, [users, search]);
+
+  async function inscrever(user) {
+    if (!confirm(`Inscrever ${user.name || user.email} neste evento?${sendEmail ? " (será enviado email)" : ""}`)) {
+      return;
+    }
+    setPendingId(user.id);
+    setFeedback(null);
+    try {
+      const res = await fetch("/api/admin/manual-inscrever", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ eventoId, userId: user.id, sendEmail }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      const estadoTxt = data.estado === "confirmado" ? "confirmado" : "lista de espera";
+      const emailTxt = sendEmail
+        ? data.emailSent ? " · email enviado" : " · email FALHOU"
+        : "";
+      setFeedback({
+        type: data.estado === "confirmado" ? "success" : "info",
+        text: `${user.name || user.email} inscrito como ${estadoTxt}${emailTxt}`,
+      });
+      // Notify parent: the parent updates `reservas` (only if confirmado, since
+      // the visible list filters confirmados) and removes from eligible list.
+      if (onInscrito && data.estado === "confirmado") {
+        onInscrito({ ...data.reserva, userId: user.id });
+      } else if (onInscrito) {
+        // Even if waitlist, remove from eligible (they have a reservation now)
+        onInscrito({ ...data.reserva, userId: user.id, _waitlistOnly: true });
+      }
+      setSearch("");
+    } catch (e) {
+      setFeedback({ type: "error", text: `Erro: ${e.message}` });
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  return (
+    <section style={s.notifyBox}>
+      <button type="button" onClick={() => setOpen((o) => !o)} style={s.notifyToggle}>
+        <span>➕ Inscrever pessoa manualmente</span>
+        <span>{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div style={s.notifyBody}>
+          <p style={s.muted}>
+            Apenas utilizadores que <strong>já têm conta no site</strong> aparecem aqui.
+            Se a pessoa não tem conta, peça-lhe para criar em <code>/auth/registar</code>.
+          </p>
+
+          <input
+            type="search"
+            placeholder="Procurar por nome ou email…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={s.notifyInput}
+            autoFocus
+          />
+
+          <label style={s.notifyCheckLabel}>
+            <input
+              type="checkbox"
+              checked={sendEmail}
+              onChange={(e) => setSendEmail(e.target.checked)}
+            />
+            <span>Enviar email de confirmação ao inscrever</span>
+          </label>
+
+          {feedback && (
+            <p style={feedback.type === "error" ? s.errorBanner : feedback.type === "success" ? s.notifySuccess : s.notifyWarn}>
+              {feedback.text}
+            </p>
+          )}
+
+          {users.length === 0 ? (
+            <p style={s.muted}>Não há utilizadores elegíveis (todos os registados já estão inscritos).</p>
+          ) : matches.length === 0 ? (
+            <p style={s.muted}>Nenhum resultado para “{search}”.</p>
+          ) : (
+            <div style={s.userList}>
+              {matches.map((u) => (
+                <div key={u.id} style={s.userRow}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={s.userName}>{u.name || <em style={s.dim}>sem nome</em>}</div>
+                    <div style={s.userEmail}>{u.email}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => inscrever(u)}
+                    disabled={pendingId === u.id}
+                    style={{ ...s.btn, ...s.btnPrimary, opacity: pendingId === u.id ? 0.5 : 1, padding: "6px 12px", fontSize: 13 }}
+                  >
+                    {pendingId === u.id ? "A inscrever…" : "Inscrever"}
+                  </button>
+                </div>
+              ))}
+              {!search && users.length > matches.length && (
+                <p style={{ ...s.muted, textAlign: "center", padding: "8px 0" }}>
+                  …mais {users.length - matches.length} utilizadores. Escreve para filtrar.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -534,4 +702,22 @@ const s = {
     fontSize: 14,
     margin: 0,
   },
+  userList: {
+    border: "1px solid #eee",
+    borderRadius: 8,
+    overflow: "auto",
+    maxHeight: 400,
+    background: "#fafafa",
+  },
+  userRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "10px 14px",
+    borderBottom: "1px solid #f0f0f0",
+    background: "#fff",
+  },
+  userName: { fontSize: 14, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  userEmail: { fontSize: 13, color: "#666", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  dim: { color: "#999", fontStyle: "italic" },
 };
