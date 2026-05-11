@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth/[...nextauth]";
 import { client, writeClient } from "../../lib/sanity";
 import { sendEmail } from "../../lib/email";
-import { buildEventIcs, buildGoogleCalendarUrl } from "../../lib/ics";
+import { buildGoogleCalendarUrl } from "../../lib/ics";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -36,7 +36,8 @@ export default async function handler(req, res) {
   const estado =
     count < (evento.maxParticipantes ?? 9999) ? "confirmado" : "lista_espera";
 
-  await writeClient.create({
+  // Create the reservation first so we have a stable id for the .ics URL
+  const created = await writeClient.create({
     _type: "reserva",
     eventoId,
     userId: session.user.id,
@@ -50,36 +51,30 @@ export default async function handler(req, res) {
     ? `Inscricao confirmada - ${evento.edicao ?? "Algoritmo Humano"}`
     : `Lista de espera - ${evento.edicao ?? "Algoritmo Humano"}`;
 
-  // Attach .ics (Apple Calendar / Outlook / etc.) only when confirmed —
-  // waitlist reservations don't get a calendar entry.
-  let attachments;
-  if (estado === "confirmado" && evento.dataISO) {
-    try {
-      const ics = buildEventIcs({
-        evento,
-        attendeeEmail: session.user.email,
-        attendeeName: session.user.name,
-        organizerEmail: process.env.SENDER_FROM_EMAIL,
-      });
-      attachments = [{ name: "evento.ics", type: "text/calendar; charset=utf-8; method=REQUEST", content: ics }];
-    } catch (err) {
-      console.error("[ics] failed to build calendar file:", err);
-    }
-  }
+  // Calendar download URL (served by /api/calendar/[reservaId].ics).
+  // We can't attach .ics directly — Sender.net's whitelist rejects it.
+  // Instead we put a clickable link in the email body that downloads the
+  // .ics and opens the user's calendar app.
+  const host = req.headers.host || "";
+  const proto = req.headers["x-forwarded-proto"]
+    || (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
+  const base = process.env.SITE_URL || `${proto}://${host}`;
+  const icsUrl = (estado === "confirmado" && evento.dataISO)
+    ? `${base.replace(/\/$/, "")}/api/calendar/${created._id}.ics`
+    : null;
 
   sendEmail({
     to: session.user.email,
     toName: session.user.name,
     subject: emailSubject,
-    html: buildConfirmationEmail({ session, evento, estado }),
-    text: buildConfirmationText({ session, evento, estado }),
-    attachments,
+    html: buildConfirmationEmail({ session, evento, estado, icsUrl }),
+    text: buildConfirmationText({ session, evento, estado, icsUrl }),
   }).catch((err) => console.error("[email] confirmation failed:", err));
 
   return res.status(200).json({ estado });
 }
 
-function buildConfirmationEmail({ session, evento, estado }) {
+function buildConfirmationEmail({ session, evento, estado, icsUrl }) {
   const isConfirmed = estado === "confirmado";
   const statusText = isConfirmed
     ? "A tua inscricao esta <strong>confirmada</strong>."
@@ -89,11 +84,13 @@ function buildConfirmationEmail({ session, evento, estado }) {
   const calendarBlock = isConfirmed && evento.dataISO
     ? `
       <div style="margin:20px 0;padding:16px;background:#f9f9f9;border-radius:6px">
-        <p style="margin:0 0 10px;font-size:14px"><strong>Adiciona ao teu calendário</strong></p>
-        ${googleUrl ? `<p style="margin:0 0 6px;font-size:13px">
-          <a href="${googleUrl}" style="display:inline-block;padding:8px 14px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none">Google Calendar</a>
+        <p style="margin:0 0 12px;font-size:14px"><strong>Adiciona ao teu calendário</strong></p>
+        ${googleUrl ? `<p style="margin:0 0 8px;font-size:13px">
+          <a href="${googleUrl}" style="display:inline-block;padding:10px 16px;background:#1a1a1a;color:#fff;border-radius:6px;text-decoration:none;margin-right:6px">📅 Google Calendar</a>
         </p>` : ""}
-        <p style="margin:6px 0 0;font-size:12px;color:#777">Utilizadores Apple / Outlook: abre o ficheiro <code>evento.ics</code> em anexo.</p>
+        ${icsUrl ? `<p style="margin:0;font-size:13px">
+          <a href="${icsUrl}" style="display:inline-block;padding:10px 16px;background:#fff;color:#1a1a1a;border:1px solid #ddd;border-radius:6px;text-decoration:none">🍎 Apple / Outlook (.ics)</a>
+        </p>` : ""}
       </div>`
     : "";
 
@@ -127,7 +124,7 @@ function buildConfirmationEmail({ session, evento, estado }) {
 </html>`;
 }
 
-function buildConfirmationText({ session, evento, estado }) {
+function buildConfirmationText({ session, evento, estado, icsUrl }) {
   const isConfirmed = estado === "confirmado";
   const lines = [
     `Ola, ${session.user.name}.`,
@@ -139,6 +136,10 @@ function buildConfirmationText({ session, evento, estado }) {
   if (evento.horario) lines.push(`Horario: ${evento.horario}`);
   if (evento.local) lines.push(`Local: ${evento.local}`);
   if (evento.convidado) lines.push(`Convidado/a: ${evento.convidado}`);
+  if (icsUrl) {
+    lines.push("");
+    lines.push(`Adicionar ao calendario (Apple/Outlook): ${icsUrl}`);
+  }
   lines.push("", "NeoGeneralista - neogeneralista.pt");
   lines.push("Recebeste este email porque te inscreveste num evento AlgoritmoHumano.");
   return lines.join("\n");

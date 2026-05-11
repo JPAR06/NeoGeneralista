@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { client, writeClient } from "../../../lib/sanity";
 import { sendEmail } from "../../../lib/email";
-import { buildEventIcs, buildGoogleCalendarUrl } from "../../../lib/ics";
+import { buildGoogleCalendarUrl } from "../../../lib/ics";
 import clientPromise from "../../../lib/mongodb";
 import { requireAdminApi } from "../../../lib/admin";
 
@@ -80,23 +80,15 @@ export default async function handler(req, res) {
   let emailSent = false;
   if (shouldEmail && user.email) {
     try {
-      let attachments;
+      // Calendar download URL — Sender.net doesn't accept .ics attachments,
+      // so we put it as a clickable link in the email body instead.
+      let icsUrl = null;
       if (estado === "confirmado" && evento.dataISO) {
-        try {
-          const ics = buildEventIcs({
-            evento,
-            attendeeEmail: user.email,
-            attendeeName: user.name || "",
-            organizerEmail: process.env.SENDER_FROM_EMAIL,
-          });
-          attachments = [{
-            name: "evento.ics",
-            type: "text/calendar; charset=utf-8; method=REQUEST",
-            content: ics,
-          }];
-        } catch (err) {
-          console.error("[manual-inscrever] ics build failed:", err);
-        }
+        const host = req.headers.host || "";
+        const proto = req.headers["x-forwarded-proto"]
+          || (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
+        const base = process.env.SITE_URL || `${proto}://${host}`;
+        icsUrl = `${base.replace(/\/$/, "")}/api/calendar/${reserva._id}.ics`;
       }
 
       const subject = estado === "confirmado"
@@ -107,9 +99,8 @@ export default async function handler(req, res) {
         to: user.email,
         toName: user.name || user.email,
         subject,
-        html: buildConfirmationEmail({ user, evento, estado }),
-        text: buildConfirmationText({ user, evento, estado }),
-        attachments,
+        html: buildConfirmationEmail({ user, evento, estado, icsUrl }),
+        text: buildConfirmationText({ user, evento, estado, icsUrl }),
       });
       emailSent = true;
     } catch (err) {
@@ -133,7 +124,7 @@ export default async function handler(req, res) {
   });
 }
 
-function buildConfirmationEmail({ user, evento, estado }) {
+function buildConfirmationEmail({ user, evento, estado, icsUrl }) {
   const isConfirmed = estado === "confirmado";
   const statusText = isConfirmed
     ? "A tua inscricao esta <strong>confirmada</strong>."
@@ -143,11 +134,13 @@ function buildConfirmationEmail({ user, evento, estado }) {
   const calendarBlock = isConfirmed && evento.dataISO
     ? `
       <div style="margin:20px 0;padding:16px;background:#f9f9f9;border-radius:6px">
-        <p style="margin:0 0 10px;font-size:14px"><strong>Adiciona ao teu calendário</strong></p>
-        ${googleUrl ? `<p style="margin:0 0 6px;font-size:13px">
-          <a href="${googleUrl}" style="display:inline-block;padding:8px 14px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none">Google Calendar</a>
+        <p style="margin:0 0 12px;font-size:14px"><strong>Adiciona ao teu calendário</strong></p>
+        ${googleUrl ? `<p style="margin:0 0 8px;font-size:13px">
+          <a href="${googleUrl}" style="display:inline-block;padding:10px 16px;background:#1a1a1a;color:#fff;border-radius:6px;text-decoration:none;margin-right:6px">📅 Google Calendar</a>
         </p>` : ""}
-        <p style="margin:6px 0 0;font-size:12px;color:#777">Utilizadores Apple / Outlook: abre o ficheiro <code>evento.ics</code> em anexo.</p>
+        ${icsUrl ? `<p style="margin:0;font-size:13px">
+          <a href="${icsUrl}" style="display:inline-block;padding:10px 16px;background:#fff;color:#1a1a1a;border:1px solid #ddd;border-radius:6px;text-decoration:none">🍎 Apple / Outlook (.ics)</a>
+        </p>` : ""}
       </div>`
     : "";
 
@@ -181,7 +174,7 @@ function buildConfirmationEmail({ user, evento, estado }) {
 </html>`;
 }
 
-function buildConfirmationText({ user, evento, estado }) {
+function buildConfirmationText({ user, evento, estado, icsUrl }) {
   const isConfirmed = estado === "confirmado";
   const lines = [
     `Ola, ${user.name || ""}.`,
@@ -195,6 +188,10 @@ function buildConfirmationText({ user, evento, estado }) {
   if (evento.horario) lines.push(`Horario: ${evento.horario}`);
   if (evento.local) lines.push(`Local: ${evento.local}`);
   if (evento.convidado) lines.push(`Convidado/a: ${evento.convidado}`);
+  if (icsUrl) {
+    lines.push("");
+    lines.push(`Adicionar ao calendario (Apple/Outlook): ${icsUrl}`);
+  }
   lines.push("", "NeoGeneralista - neogeneralista.pt");
   return lines.join("\n");
 }
