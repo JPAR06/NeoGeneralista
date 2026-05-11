@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { client } from "../../../../lib/sanity";
 import { requireAdmin } from "../../../../lib/admin";
@@ -410,29 +410,29 @@ const NOTIFY_TEMPLATES = [
     id: "atraso",
     label: "Atraso",
     subject: "Atraso no início",
-    message: "Olá! Devido a um imprevisto, o evento começará com algum atraso. Avisaremos quando estivermos prontos. Obrigado pela compreensão!",
+    message: "<p>Olá! Devido a um imprevisto, o evento começará com algum atraso. Avisaremos quando estivermos prontos. Obrigado pela compreensão!</p>",
   },
   {
     id: "local",
     label: "Mudança de local",
     subject: "Mudança de local",
-    message: "Olá! Importante: o local do evento mudou. Nova morada: [INDICAR AQUI]. Pedimos desculpa pelo inconveniente.",
+    message: "<p>Olá! Importante: o local do evento mudou. Nova morada: <strong>[INDICAR AQUI]</strong>. Pedimos desculpa pelo inconveniente.</p>",
   },
   {
     id: "cancel",
     label: "Cancelamento",
     subject: "Evento cancelado",
-    message: "Olá! Lamentamos informar que o evento de hoje foi cancelado. Estamos a remarcar e damos mais informações em breve. Obrigado pela compreensão.",
+    message: "<p>Olá! Lamentamos informar que o evento de hoje foi cancelado. Estamos a remarcar e damos mais informações em breve. Obrigado pela compreensão.</p>",
   },
 ];
 
 function NotifyBlock({ evento, confirmadosCount }) {
   const [open, setOpen] = useState(false);
   const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
   const [includeWaitlist, setIncludeWaitlist] = useState(false);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null); // { ok, sent, failed, total } | { error }
+  const editorRef = useRef(null);
 
   const lastSent = evento.ultimaNotificacaoAt
     ? new Date(evento.ultimaNotificacaoAt)
@@ -440,14 +440,42 @@ function NotifyBlock({ evento, confirmadosCount }) {
   const lastSentMinutes = lastSent ? Math.floor((Date.now() - lastSent.getTime()) / 60000) : null;
   const recentlySent = lastSentMinutes !== null && lastSentMinutes < 30;
 
+  const setEditorHtml = (html) => {
+    if (editorRef.current) editorRef.current.innerHTML = html;
+  };
+
   const applyTemplate = (t) => {
     setSubject(t.subject);
-    setMessage(t.message);
+    setEditorHtml(t.message);
+  };
+
+  const execCmd = (cmd, value) => {
+    document.execCommand(cmd, false, value);
+    editorRef.current?.focus();
+  };
+
+  const handleLink = () => {
+    const url = window.prompt("URL (https://... ou mailto:...):");
+    if (!url) return;
+    if (!/^(https?:\/\/|mailto:)/i.test(url)) {
+      window.alert("URL inválido. Deve começar com https:// ou mailto:");
+      return;
+    }
+    // If there's no selection, prompt for label text.
+    const sel = window.getSelection?.();
+    if (!sel || sel.toString().length === 0) {
+      const label = window.prompt("Texto do link (opcional):", url) || url;
+      execCmd("insertHTML", `<a href="${url.replace(/"/g, "&quot;")}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+    } else {
+      execCmd("createLink", url);
+    }
   };
 
   const handleSend = async () => {
-    if (!subject.trim() || !message.trim()) {
-      setResult({ error: "Preenche assunto e mensagem." });
+    const messageHtml = editorRef.current?.innerHTML || "";
+    const messageText = (editorRef.current?.innerText || "").trim();
+    if (!subject.trim() || messageText.length < 5) {
+      setResult({ error: "Preenche assunto e mensagem (mín. 5 caracteres)." });
       return;
     }
     if (!confirm(`Enviar notificação para ${confirmadosCount}${includeWaitlist ? " (+ lista espera)" : ""} inscritos?`)) {
@@ -460,14 +488,14 @@ function NotifyBlock({ evento, confirmadosCount }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ eventoId: evento._id, subject, message, includeWaitlist }),
+        body: JSON.stringify({ eventoId: evento._id, subject, message: messageHtml, includeWaitlist }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setResult(data);
       if (data.sent > 0) {
         setSubject("");
-        setMessage("");
+        setEditorHtml("");
       }
     } catch (e) {
       setResult({ error: e.message });
@@ -515,17 +543,38 @@ function NotifyBlock({ evento, confirmadosCount }) {
             />
           </label>
 
-          <label style={s.notifyLabel}>
-            Mensagem
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="O texto que aparece no corpo do email…"
-              rows={5}
-              style={{ ...s.notifyInput, fontFamily: "inherit", resize: "vertical" }}
-              disabled={sending}
-            />
-          </label>
+          <div style={s.notifyLabel}>
+            <span>Mensagem</span>
+            <div style={s.editorWrap}>
+              <div style={s.editorToolbar}>
+                <button type="button" onClick={() => execCmd("bold")} style={s.editorBtn} title="Negrito (Ctrl+B)"><strong>B</strong></button>
+                <button type="button" onClick={() => execCmd("italic")} style={s.editorBtn} title="Itálico (Ctrl+I)"><em>I</em></button>
+                <button type="button" onClick={() => execCmd("underline")} style={s.editorBtn} title="Sublinhado (Ctrl+U)"><u>U</u></button>
+                <span style={s.editorDivider} />
+                <label style={{ ...s.editorBtn, display: "inline-flex", alignItems: "center", gap: 4, cursor: "pointer" }} title="Cor da letra">
+                  🎨
+                  <input
+                    type="color"
+                    onChange={(e) => execCmd("foreColor", e.target.value)}
+                    style={{ width: 18, height: 18, border: 0, padding: 0, background: "transparent", cursor: "pointer" }}
+                  />
+                </label>
+                <button type="button" onClick={() => execCmd("foreColor", "#1a1a1a")} style={s.editorBtn} title="Voltar à cor preta">⬛</button>
+                <span style={s.editorDivider} />
+                <button type="button" onClick={() => execCmd("insertUnorderedList")} style={s.editorBtn} title="Lista">• Lista</button>
+                <button type="button" onClick={handleLink} style={s.editorBtn} title="Adicionar link">🔗 Link</button>
+                <span style={s.editorDivider} />
+                <button type="button" onClick={() => execCmd("removeFormat")} style={s.editorBtn} title="Limpar formatação">✕ Formatação</button>
+              </div>
+              <div
+                ref={editorRef}
+                contentEditable={!sending}
+                suppressContentEditableWarning
+                style={s.editorContent}
+                data-placeholder="Escreve a mensagem… selecciona texto e usa B / I / 🔗 para formatar."
+              />
+            </div>
+          </div>
 
           <label style={s.notifyCheckLabel}>
             <input
@@ -720,4 +769,44 @@ const s = {
   userName: { fontSize: 14, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
   userEmail: { fontSize: 13, color: "#666", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
   dim: { color: "#999", fontStyle: "italic" },
+  editorWrap: {
+    border: "1px solid #e5e5e5",
+    borderRadius: 6,
+    background: "#fff",
+    overflow: "hidden",
+  },
+  editorToolbar: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    padding: "6px 8px",
+    borderBottom: "1px solid #f0f0f0",
+    background: "#fafafa",
+    flexWrap: "wrap",
+  },
+  editorBtn: {
+    padding: "5px 9px",
+    background: "transparent",
+    border: "1px solid transparent",
+    borderRadius: 4,
+    fontSize: 13,
+    cursor: "pointer",
+    color: "#333",
+    fontFamily: "inherit",
+  },
+  editorDivider: {
+    width: 1,
+    height: 18,
+    background: "#e5e5e5",
+    margin: "0 4px",
+  },
+  editorContent: {
+    minHeight: 120,
+    padding: "10px 12px",
+    fontSize: 14,
+    lineHeight: 1.5,
+    color: "#1a1a1a",
+    outline: "none",
+    fontFamily: "inherit",
+  },
 };

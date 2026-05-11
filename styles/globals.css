@@ -4369,3 +4369,12 @@ img {
   .lightbox-arrow--right { right: 8px; }
   .lightbox-close { top: 12px; right: 12px; width: 36px; height: 36px; font-size: 22px; }
 }
+
+/* Placeholder for contenteditable rich-text editor (admin notify block) */
+[contenteditable][data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: #aaa;
+  pointer-events: none;
+}
+[contenteditable]:focus { outline: none; }
+[contenteditable] a { color: #F05A78; text-decoration: underline; }
