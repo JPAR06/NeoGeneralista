@@ -37,7 +37,10 @@ export default function AdminDashboard({ eventos, user }) {
           </div>
           <div style={s.userBox}>
             <span style={s.muted}>Sessão: {user.email}</span>
-            <Link href="/admin/utilizadores" style={s.exportUsers}>Ver utilizadores →</Link>
+            <div style={s.userLinks}>
+              <Link href="/admin/dashboard" style={s.exportUsers}>Dashboard →</Link>
+              <Link href="/admin/utilizadores" style={s.exportUsers}>Ver utilizadores →</Link>
+            </div>
           </div>
         </header>
 
@@ -108,6 +111,7 @@ const s = {
   h2: { fontSize: 18, margin: "0 0 16px" },
   muted: { color: "#888", fontSize: 13 },
   userBox: { textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 },
+  userLinks: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" },
   exportUsers: { display: "inline-block", padding: "9px 12px", background: "#fff", border: "1px solid #e5e5e5", borderRadius: 6, textDecoration: "none", color: "#1a1a1a", fontSize: 13 },
   section: { marginBottom: 40 },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 },

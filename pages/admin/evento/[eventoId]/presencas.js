@@ -16,7 +16,7 @@ export async function getServerSideProps(ctx) {
   if (!evento) return { notFound: true };
 
   const reservas = await client.fetch(
-    `*[_type == "reserva" && eventoId == $eventoId && estado == "confirmado"] | order(checkedIn desc, checkedInAt asc, nome asc){_id, nome, email, checkedIn, checkedInAt}`,
+    `*[_type == "reserva" && eventoId == $eventoId] | order(checkedIn desc, checkedInAt asc, nome asc){_id, nome, email, estado, checkedIn, checkedInAt, _updatedAt, _createdAt}`,
     { eventoId }
   );
 
@@ -84,17 +84,24 @@ export default function Presencas({
   const [pending, setPending] = useState({});  // { reservaId: boolean }
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("confirmados"); // "confirmados" | "espera" | "cancelados"
+
+  const confirmados = useMemo(() => reservas.filter((r) => r.estado === "confirmado"), [reservas]);
+  const espera = useMemo(() => reservas.filter((r) => r.estado === "lista_espera"), [reservas]);
+  const cancelados = useMemo(() => reservas.filter((r) => r.estado === "cancelado"), [reservas]);
+
+  const activeList = tab === "espera" ? espera : tab === "cancelados" ? cancelados : confirmados;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return reservas;
-    return reservas.filter(
+    if (!q) return activeList;
+    return activeList.filter(
       (r) => r.nome?.toLowerCase().includes(q) || r.email?.toLowerCase().includes(q)
     );
-  }, [reservas, search]);
+  }, [activeList, search]);
 
-  const total = reservas.length;
-  const presentes = reservas.filter((r) => r.checkedIn).length;
+  const total = confirmados.length;
+  const presentes = confirmados.filter((r) => r.checkedIn).length;
   const taxa = total ? Math.round((presentes / total) * 100) : 0;
 
   async function toggle(reserva) {
@@ -132,6 +139,45 @@ export default function Presencas({
     }
   }
 
+  async function cancelar(reserva) {
+    if (!confirm(`Cancelar inscrição de ${reserva.nome}?`)) return;
+    const prev = reservas;
+    // Optimistic: mark as cancelado locally.
+    setReservas((rs) =>
+      rs.map((r) =>
+        r._id === reserva._id
+          ? { ...r, estado: "cancelado", _updatedAt: new Date().toISOString() }
+          : r
+      )
+    );
+    setPending((p) => ({ ...p, [reserva._id]: true }));
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/cancelar-reserva-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ reservaId: reserva._id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      if (data.promoted?._id) {
+        setReservas((rs) =>
+          rs.map((r) => (r._id === data.promoted._id ? { ...r, estado: "confirmado" } : r))
+        );
+      }
+    } catch (e) {
+      setReservas(prev);
+      setError(`Erro ao cancelar ${reserva.nome}: ${e.message}`);
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setPending((p) => {
+        const { [reserva._id]: _, ...rest } = p;
+        return rest;
+      });
+    }
+  }
+
   return (
     <div style={s.page}>
       <div style={s.container}>
@@ -152,6 +198,11 @@ export default function Presencas({
           <Stat label="Presentes" value={presentes} />
           <Stat label="Taxa" value={`${taxa}%`} />
         </section>
+        <p style={s.subStats}>
+          Lista de espera: <strong>{espera.length}</strong>
+          {" · "}
+          Cancelados: <strong>{cancelados.length}</strong>
+        </p>
 
         <section style={s.actions}>
           <a href={printUrl} target="_blank" rel="noreferrer" style={{ ...s.btn, ...s.btnPrimary }}>
@@ -178,10 +229,8 @@ export default function Presencas({
           eventoId={evento._id}
           users={eligible}
           onInscrito={(novaReserva) => {
-            // Only add to the visible list (which shows estado=confirmado)
-            if (novaReserva.estado === "confirmado") {
-              setReservas((prev) => [...prev, novaReserva]);
-            }
+            // Add to the unified list; useMemo derives the tab list from estado.
+            setReservas((prev) => [...prev, novaReserva]);
             setEligible((prev) => prev.filter((u) => u.id !== novaReserva.userId));
           }}
         />
@@ -190,14 +239,25 @@ export default function Presencas({
 
 
         <section>
-          <div style={s.listHeader}>
-            <h2 style={s.h2}>Lista de inscritos confirmados</h2>
-            <p style={s.muted}>
-              Clica nas caixas para marcar/desmarcar manualmente (override do QR).
-            </p>
+          <div style={s.tabs} role="tablist">
+            <TabBtn active={tab === "confirmados"} onClick={() => { setTab("confirmados"); setSearch(""); }} label="Confirmados" count={confirmados.length} />
+            <TabBtn active={tab === "espera"} onClick={() => { setTab("espera"); setSearch(""); }} label="Lista de espera" count={espera.length} />
+            <TabBtn active={tab === "cancelados"} onClick={() => { setTab("cancelados"); setSearch(""); }} label="Canceladas" count={cancelados.length} />
           </div>
 
-          {reservas.length > 0 && (
+          <div style={s.listHeader}>
+            {tab === "confirmados" && (
+              <p style={s.muted}>Clica nas caixas para marcar/desmarcar presença manualmente (override do QR).</p>
+            )}
+            {tab === "espera" && (
+              <p style={s.muted}>Pessoas em lista de espera. Ao cancelar uma confirmação, a primeira desta lista é promovida automaticamente.</p>
+            )}
+            {tab === "cancelados" && (
+              <p style={s.muted}>Pessoas que cancelaram (pelo próprio ou pelo admin). Sem ações disponíveis.</p>
+            )}
+          </div>
+
+          {activeList.length > 0 && (
             <div style={s.searchWrap}>
               <input
                 type="search"
@@ -208,7 +268,7 @@ export default function Presencas({
               />
               {search && (
                 <span style={s.searchCount}>
-                  {filtered.length} de {total}
+                  {filtered.length} de {activeList.length}
                 </span>
               )}
             </div>
@@ -216,44 +276,74 @@ export default function Presencas({
 
           {error && <p style={s.errorBanner}>{error}</p>}
 
-          {reservas.length === 0 ? (
-            <p style={s.muted}>Sem inscrições confirmadas ainda.</p>
+          {activeList.length === 0 ? (
+            <p style={s.muted}>
+              {tab === "confirmados" && "Sem inscrições confirmadas ainda."}
+              {tab === "espera" && "Sem ninguém em lista de espera."}
+              {tab === "cancelados" && "Sem cancelamentos."}
+            </p>
           ) : filtered.length === 0 ? (
             <p style={s.muted}>Nenhum resultado para “{search}”.</p>
           ) : (
             <table style={s.table}>
               <thead>
                 <tr>
-                  <th style={s.th}>Presente</th>
+                  {tab === "confirmados" && <th style={s.th}>Presente</th>}
                   <th style={s.th}>Nome</th>
                   <th style={s.th}>Email</th>
-                  <th style={s.th}>Hora check-in</th>
+                  {tab === "confirmados" && <th style={s.th}>Hora check-in</th>}
+                  {tab === "cancelados" && <th style={s.th}>Cancelada em</th>}
+                  {tab !== "cancelados" && <th style={s.thAction}>Ações</th>}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => {
                   const isPending = !!pending[r._id];
+                  const rowStyle = tab === "confirmados" && r.checkedIn ? s.rowIn : undefined;
                   return (
-                    <tr key={r._id} style={r.checkedIn ? s.rowIn : undefined}>
-                      <td style={s.tdCheckbox}>
-                        <label style={{ ...s.checkboxLabel, opacity: isPending ? 0.5 : 1 }}>
-                          <input
-                            type="checkbox"
-                            checked={!!r.checkedIn}
-                            disabled={isPending}
-                            onChange={() => toggle(r)}
-                            style={s.checkbox}
-                            aria-label={`Marcar ${r.nome} como presente`}
-                          />
-                        </label>
-                      </td>
+                    <tr key={r._id} style={rowStyle}>
+                      {tab === "confirmados" && (
+                        <td style={s.tdCheckbox}>
+                          <label style={{ ...s.checkboxLabel, opacity: isPending ? 0.5 : 1 }}>
+                            <input
+                              type="checkbox"
+                              checked={!!r.checkedIn}
+                              disabled={isPending}
+                              onChange={() => toggle(r)}
+                              style={s.checkbox}
+                              aria-label={`Marcar ${r.nome} como presente`}
+                            />
+                          </label>
+                        </td>
+                      )}
                       <td style={s.td}>{r.nome}</td>
                       <td style={{ ...s.td, color: "#666", fontSize: 13 }}>{r.email}</td>
-                      <td style={s.td}>
-                        {r.checkedInAt
-                          ? new Date(r.checkedInAt).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })
-                          : ""}
-                      </td>
+                      {tab === "confirmados" && (
+                        <td style={s.td}>
+                          {r.checkedInAt
+                            ? new Date(r.checkedInAt).toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" })
+                            : ""}
+                        </td>
+                      )}
+                      {tab === "cancelados" && (
+                        <td style={{ ...s.td, color: "#666", fontSize: 13 }}>
+                          {r._updatedAt
+                            ? new Date(r._updatedAt).toLocaleString("pt-PT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+                            : ""}
+                        </td>
+                      )}
+                      {tab !== "cancelados" && (
+                        <td style={s.tdAction}>
+                          <button
+                            type="button"
+                            onClick={() => cancelar(r)}
+                            disabled={isPending}
+                            style={{ ...s.btnCancel, opacity: isPending ? 0.5 : 1 }}
+                          >
+                            {isPending ? "A cancelar…" : "Cancelar"}
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -272,6 +362,20 @@ function Stat({ label, value }) {
       <div style={s.statValue}>{value}</div>
       <div style={s.statLabel}>{label}</div>
     </div>
+  );
+}
+
+function TabBtn({ active, onClick, label, count }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      style={active ? { ...s.tabBtn, ...s.tabBtnActive } : s.tabBtn}
+    >
+      {label} <span style={active ? s.tabCountActive : s.tabCount}>{count}</span>
+    </button>
   );
 }
 
@@ -622,10 +726,26 @@ const s = {
   h1: { fontSize: 28, margin: "6px 0 8px" },
   h2: { fontSize: 18, margin: "0 0 6px" },
   muted: { color: "#777", fontSize: 14, margin: "4px 0" },
-  stats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, margin: "16px 0" },
+  stats: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, margin: "16px 0 0" },
   stat: { background: "#fff", borderRadius: 8, padding: 16, textAlign: "center" },
   statValue: { fontSize: 32, fontWeight: 700 },
   statLabel: { fontSize: 12, color: "#888", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
+  subStats: { color: "#777", fontSize: 13, margin: "8px 2px 16px" },
+  tabs: { display: "flex", gap: 4, marginBottom: 12, borderBottom: "1px solid #e5e5e5", flexWrap: "wrap" },
+  tabBtn: {
+    padding: "10px 14px",
+    background: "transparent",
+    border: 0,
+    borderBottom: "2px solid transparent",
+    cursor: "pointer",
+    fontSize: 14,
+    color: "#666",
+    fontFamily: "inherit",
+    marginBottom: -1,
+  },
+  tabBtnActive: { color: "#1a1a1a", fontWeight: 600, borderBottomColor: "#1a1a1a" },
+  tabCount: { display: "inline-block", marginLeft: 6, padding: "1px 8px", background: "#f0f0f0", color: "#666", borderRadius: 10, fontSize: 12, fontWeight: 500 },
+  tabCountActive: { display: "inline-block", marginLeft: 6, padding: "1px 8px", background: "#1a1a1a", color: "#fff", borderRadius: 10, fontSize: 12, fontWeight: 600 },
   actions: { display: "flex", flexWrap: "wrap", gap: 8, margin: "0 0 24px" },
   btn: { display: "inline-block", padding: "10px 14px", background: "#fff", border: "1px solid #e5e5e5", borderRadius: 6, textDecoration: "none", color: "#1a1a1a", fontSize: 14 },
   btnPrimary: { background: "#1a1a1a", color: "#fff", borderColor: "#1a1a1a" },
@@ -661,8 +781,11 @@ const s = {
   },
   table: { width: "100%", background: "#fff", borderCollapse: "collapse", borderRadius: 8, overflow: "hidden" },
   th: { textAlign: "left", padding: "10px 12px", borderBottom: "1px solid #eee", fontSize: 13, color: "#666", background: "#fafafa" },
+  thAction: { textAlign: "right", padding: "10px 12px", borderBottom: "1px solid #eee", fontSize: 13, color: "#666", background: "#fafafa", width: 110 },
   td: { padding: "10px 12px", borderBottom: "1px solid #f5f5f5", fontSize: 14 },
   tdCheckbox: { padding: "10px 12px", borderBottom: "1px solid #f5f5f5", textAlign: "center", width: 80 },
+  tdAction: { padding: "8px 12px", borderBottom: "1px solid #f5f5f5", textAlign: "right" },
+  btnCancel: { padding: "6px 10px", background: "#fff", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "inherit" },
   checkboxLabel: { display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 4 },
   checkbox: { width: 18, height: 18, accentColor: "#1a7f37", cursor: "pointer" },
   rowIn: { background: "#f3faf3" },
