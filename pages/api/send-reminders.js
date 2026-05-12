@@ -42,6 +42,10 @@ export default async function handler(req, res) {
           toName: reserva.nome,
           subject: `Lembrete — ${evento.edicao ?? "Algoritmo Humano"} é amanhã!`,
           html: buildReminderEmail({ reserva, evento }),
+          text: buildReminderText({ reserva, evento }),
+          headers: {
+            "List-Unsubscribe": "<mailto:ana@neogeneralista.pt?subject=unsubscribe-eventos>",
+          },
         });
         sent++
       } catch (err) {
@@ -51,6 +55,30 @@ export default async function handler(req, res) {
   }
 
   return res.status(200).json({ sent });
+}
+
+function buildReminderText({ reserva, evento }) {
+  const edicao = evento.edicao ?? "Algoritmo Humano";
+  const lines = [
+    `Olá, ${reserva.nome},`,
+    "",
+    `Só a relembrar que o ${edicao} é amanhã. Aqui ficam os detalhes:`,
+    "",
+  ];
+  if (evento.data) lines.push(`Data: ${evento.data}`);
+  if (evento.horario) lines.push(`Horário: ${evento.horario}`);
+  if (evento.local) lines.push(`Local: ${evento.local}`);
+  if (evento.convidado) lines.push(`Convidado: ${evento.convidado}`);
+  lines.push(
+    "",
+    "Ver detalhes: https://neogeneralista.pt/algoritmo-humano/evento",
+    "",
+    "Não vais poder ir? Cancela a tua reserva diretamente na plataforma para libertares o lugar.",
+    "",
+    "— NeoGeneralista",
+    "neogeneralista.pt"
+  );
+  return lines.join("\n");
 }
 
 function buildReminderEmail({ reserva, evento }) {
