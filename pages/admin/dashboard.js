@@ -10,13 +10,13 @@ export async function getServerSideProps(ctx) {
     `{
       "totalEventos": count(*[_type == "eventoProximo"]),
       "totalInscritos": count(*[_type == "reserva"]),
-      "totalConfirmados": count(*[_type == "reserva" && estado == "confirmado"]),
+      "totalConfirmados": count(*[_type == "reserva" && estado == "confirmado" && checkedIn == true]),
       "totalCancelados": count(*[_type == "reserva" && estado == "cancelado"]),
       "totalEspera": count(*[_type == "reserva" && estado == "lista_espera"]),
       "eventos": *[_type == "eventoProximo"] | order(coalesce(dataISO, _createdAt) desc){
         _id, edicao, tema, data, dataISO,
         "inscritos": count(*[_type == "reserva" && eventoId == ^._id]),
-        "confirmados": count(*[_type == "reserva" && eventoId == ^._id && estado == "confirmado"]),
+        "confirmados": count(*[_type == "reserva" && eventoId == ^._id && estado == "confirmado" && checkedIn == true]),
         "cancelados": count(*[_type == "reserva" && eventoId == ^._id && estado == "cancelado"])
       }
     }`
@@ -61,7 +61,7 @@ export default function Dashboard({ data, user }) {
 
         <section style={s.grid}>
           <MetricCard label="Inscritos" value={totalInscritos} sub={`média ${fmtAvg(totalInscritos, totalEventos)} por evento`} />
-          <MetricCard label="Confirmados" value={totalConfirmados} sub={`média ${fmtAvg(totalConfirmados, totalEventos)} por evento`} accent="#16a34a" />
+          <MetricCard label="Confirmados" value={totalConfirmados} sub={`compareceram (check-in feito) · média ${fmtAvg(totalConfirmados, totalEventos)} por evento`} accent="#16a34a" />
           <MetricCard label="Cancelados" value={totalCancelados} sub={`média ${fmtAvg(totalCancelados, totalEventos)} por evento`} accent="#b91c1c" />
         </section>
 
