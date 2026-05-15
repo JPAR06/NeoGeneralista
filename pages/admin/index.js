@@ -10,7 +10,9 @@ export async function getServerSideProps(ctx) {
     `*[_type == "eventoProximo"] | order(dataISO desc){
       _id, edicao, tema, data, horario, local, dataISO, formularioAtivo,
       "inscritos": count(*[_type == "reserva" && eventoId == ^._id && estado == "confirmado"]),
-      "presentes": count(*[_type == "reserva" && eventoId == ^._id && estado == "confirmado" && checkedIn == true])
+      "presentes": count(*[_type == "reserva" && eventoId == ^._id && estado == "confirmado" && checkedIn == true]),
+      "cancelados": count(*[_type == "reserva" && eventoId == ^._id && estado == "cancelado"]),
+      "faltaram": count(*[_type == "reserva" && eventoId == ^._id && estado == "confirmado" && checkedIn != true])
     }`
   );
 
@@ -74,6 +76,8 @@ function Section({ title, empty, children }) {
 
 function EventoCard({ evento, upcoming }) {
   const taxa = evento.inscritos ? Math.round((evento.presentes / evento.inscritos) * 100) : 0;
+  // Para eventos futuros, "Faltaram" não faz sentido (ainda não aconteceu)
+  const showAttendance = !upcoming || (evento.presentes ?? 0) > 0;
   const dataFmt = evento.dataISO
     ? new Date(evento.dataISO).toLocaleString("pt-PT", {
         day: "2-digit",
@@ -93,12 +97,23 @@ function EventoCard({ evento, upcoming }) {
       </div>
       <h3 style={s.cardTitle}>{evento.tema || "A Anunciar"}</h3>
       <p style={s.cardMeta}>{dataFmt}{evento.local ? ` · ${evento.local}` : ""}</p>
-      <div style={s.cardStats}>
-        <div><strong>{evento.inscritos}</strong> <span style={s.muted}>inscritos</span></div>
-        <div><strong>{evento.presentes}</strong> <span style={s.muted}>presentes</span></div>
-        <div><strong>{taxa}%</strong> <span style={s.muted}>taxa</span></div>
+      <div style={s.cardStatsGrid}>
+        <Stat label="Inscritos" value={evento.inscritos} />
+        <Stat label="Compareceram" value={evento.presentes} color="#16a34a" />
+        <Stat label="Cancelados" value={evento.cancelados} color="#b91c1c" />
+        {showAttendance && <Stat label="Faltaram" value={evento.faltaram} color="#d97706" />}
+        {showAttendance && <Stat label="Taxa" value={`${taxa}%`} color={taxa >= 70 ? "#16a34a" : taxa >= 40 ? "#d97706" : "#b91c1c"} />}
       </div>
     </Link>
+  );
+}
+
+function Stat({ label, value, color }) {
+  return (
+    <div style={s.stat}>
+      <div style={{ ...s.statValue, color: color || "#1a1a1a" }}>{value}</div>
+      <div style={s.statLabel}>{label}</div>
+    </div>
   );
 }
 
@@ -130,6 +145,10 @@ const s = {
   cardTitle: { fontSize: 18, margin: "4px 0" },
   cardMeta: { fontSize: 13, color: "#666", margin: "4px 0 12px" },
   cardStats: { display: "flex", gap: 16, fontSize: 14, paddingTop: 10, borderTop: "1px solid #f0f0f0" },
+  cardStatsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(72px, 1fr))", gap: 8, paddingTop: 12, borderTop: "1px solid #f0f0f0" },
+  stat: { textAlign: "center", padding: "6px 4px" },
+  statValue: { fontSize: 18, fontWeight: 700, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" },
+  statLabel: { fontSize: 10, color: "#888", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 4 },
   badgeOpen: { background: "#e6f6ec", color: "#1a7f37", fontSize: 11, padding: "2px 8px", borderRadius: 10, fontWeight: 600 },
   badgeClosed: { background: "#f5f5f5", color: "#666", fontSize: 11, padding: "2px 8px", borderRadius: 10, fontWeight: 600 },
 };

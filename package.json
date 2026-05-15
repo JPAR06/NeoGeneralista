@@ -14,17 +14,20 @@
     "@sanity/client": "^7.16.0",
     "@sanity/ui": "^3.2.0",
     "bcryptjs": "^3.0.3",
+    "lucide-react": "^1.16.0",
     "mongodb": "^5.9.2",
     "next": "^14.0.0",
     "next-auth": "^4.24.13",
     "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "recharts": "^3.8.1",
     "sanity": "^3.99.0",
     "styled-components": "^6.3.12"
   },
   "devDependencies": {
     "eslint": "^8.0.0",
-    "eslint-config-next": "^14.0.0"
+    "eslint-config-next": "^14.0.0",
+    "nodemailer": "^7.0.13"
   }
 }

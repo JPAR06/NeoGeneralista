@@ -16,9 +16,26 @@ export async function getServerSideProps(ctx) {
   if (!evento) return { notFound: true };
 
   const reservas = await client.fetch(
-    `*[_type == "reserva" && eventoId == $eventoId] | order(checkedIn desc, checkedInAt asc, nome asc){_id, nome, email, estado, checkedIn, checkedInAt, _updatedAt, _createdAt}`,
+    `*[_type == "reserva" && eventoId == $eventoId] | order(checkedIn desc, checkedInAt asc, nome asc){_id, nome, email, userId, estado, checkedIn, checkedInAt, _updatedAt, _createdAt}`,
     { eventoId }
   );
+
+  // Apurar veterans: quem fez check-in em qualquer outro evento.
+  const priorAttendees = await client.fetch(
+    `*[_type == "reserva" && checkedIn == true && eventoId != $eventoId]{userId, email}`,
+    { eventoId }
+  );
+  const veteransSet = new Set();
+  for (const r of priorAttendees) {
+    if (r.userId) veteransSet.add(`u:${r.userId}`);
+    if (r.email) veteransSet.add(`e:${r.email.toLowerCase()}`);
+  }
+  // Marcar cada reserva como estreante (true se nunca fez check-in noutro evento).
+  for (const r of reservas) {
+    const veterano = (r.userId && veteransSet.has(`u:${r.userId}`))
+      || (r.email && veteransSet.has(`e:${r.email.toLowerCase()}`));
+    r.estreante = !veterano;
+  }
 
   // Users already in this event (any active state) — used to exclude from the
   // manual-inscribe picker.
@@ -316,7 +333,12 @@ export default function Presencas({
                           </label>
                         </td>
                       )}
-                      <td style={s.td}>{r.nome}</td>
+                      <td style={s.td}>
+                        {r.nome}
+                        {r.estreante && tab !== "cancelados" && (
+                          <span style={s.badgeEstreante} title="Primeira vez num evento">Estreante</span>
+                        )}
+                      </td>
                       <td style={{ ...s.td, color: "#666", fontSize: 13 }}>{r.email}</td>
                       {tab === "confirmados" && (
                         <td style={s.td}>
@@ -786,6 +808,7 @@ const s = {
   tdCheckbox: { padding: "10px 12px", borderBottom: "1px solid #f5f5f5", textAlign: "center", width: 80 },
   tdAction: { padding: "8px 12px", borderBottom: "1px solid #f5f5f5", textAlign: "right" },
   btnCancel: { padding: "6px 10px", background: "#fff", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "inherit" },
+  badgeEstreante: { display: "inline-block", marginLeft: 8, padding: "2px 8px", background: "#fff0f3", color: "#ff366b", border: "1px solid #ffd1dc", borderRadius: 10, fontSize: 11, fontWeight: 600, letterSpacing: 0.3, verticalAlign: "1px" },
   checkboxLabel: { display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 4 },
   checkbox: { width: 18, height: 18, accentColor: "#1a7f37", cursor: "pointer" },
   rowIn: { background: "#f3faf3" },

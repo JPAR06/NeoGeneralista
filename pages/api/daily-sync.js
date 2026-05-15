@@ -23,5 +23,10 @@ export default async function handler(req, res) {
     results.syncComunidade = await r.json();
   } catch (e) { results.syncComunidade = { error: e.message }; }
 
+  try {
+    const r = await fetch(`${baseUrl}/api/daily-metrics`, { headers });
+    results.dailyMetrics = await r.json();
+  } catch (e) { results.dailyMetrics = { error: e.message }; }
+
   return res.status(200).json(results);
 }
