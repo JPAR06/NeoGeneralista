@@ -72,9 +72,12 @@ export async function getServerSideProps(ctx) {
   ]);
 
   // % retorno: of users who attended any event, what % attended ≥2 events.
+  // Group by email (more stable than userId — the same person can have
+  // userId="import:..." from CSV imports and userId="<mongo-id>" from a later
+  // site signup; using userId would split them in two).
   const byUser = new Map();
   for (const r of sanityData.checkInsAll || []) {
-    const key = r.userId || r.email?.toLowerCase();
+    const key = r.email?.toLowerCase() || r.userId;
     if (!key) continue;
     if (!byUser.has(key)) byUser.set(key, new Set());
     byUser.get(key).add(r.eventoId);
