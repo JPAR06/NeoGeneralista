@@ -9,3 +9,5 @@ build
 desktop.ini
 CLAUDE.md
 .sanity
+
+.vercel
