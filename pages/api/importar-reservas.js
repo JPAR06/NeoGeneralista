@@ -98,6 +98,7 @@ export default async function handler(req, res) {
           estado,
           icsUrl: null,
           selfSignup: false,
+          headerVariant: "reserva",
         });
         sendEmail({
           to: email,
